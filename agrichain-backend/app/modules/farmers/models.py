@@ -48,7 +48,7 @@ class User(Base):
         SQLEnum(UserRole), nullable=False, default=UserRole.FARMER
     )
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default="now()")
 
     farmer_profile: Mapped[Optional["Farmer"]] = relationship(
         "Farmer", back_populates="user", uselist=False
