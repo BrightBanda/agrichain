@@ -1,22 +1,18 @@
-from datetime import datetime
-
 import enum
 import uuid
-
-from typing import List, Optional
-
+from datetime import datetime
+from typing import Optional, List
 from sqlalchemy import (
+    String,
+    ForeignKey,
+    Enum as SQLEnum,
+    Numeric,
+    Integer,
     Boolean,
     DateTime,
-    Enum as SQLEnum,
-    ForeignKey,
-    Integer,
-    Numeric,
-    String,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from app.core.database import Base
 
 
@@ -27,6 +23,12 @@ class UserRole(str, enum.Enum):
     PRODUCE_BUYER = "PRODUCE_BUYER"
     COOPERATIVE = "COOPERATIVE"
     ADMIN = "ADMIN"
+
+
+class Gender(str, enum.Enum):
+    MALE = "MALE"
+    FEMALE = "FEMALE"
+    OTHER = "OTHER"
 
 
 class User(Base):
@@ -42,7 +44,9 @@ class User(Base):
         String(255), unique=True, nullable=True
     )
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole), nullable=False)
+    role: Mapped[UserRole] = mapped_column(
+        SQLEnum(UserRole), nullable=False, default=UserRole.FARMER
+    )
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -60,24 +64,27 @@ class Farmer(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    # Personal & KYC Information
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    national_id_number: Mapped[str] = mapped_column(
+        String(50), unique=True, index=True, nullable=False
+    )
+    gender: Mapped[Gender] = mapped_column(SQLEnum(Gender), nullable=False)
+
+    # Location Hierarchy
+    district: Mapped[str] = mapped_column(String(100), nullable=False)
+    traditional_authority: Mapped[str] = mapped_column(String(100), nullable=False)
+    village: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # Document / Media File URLs
+    profile_photo_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    id_front_photo_url: Mapped[Optional[str]] = mapped_column(
+        String(500), nullable=True
+    )
+    id_back_photo_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
+    # Credit Score
     lending_score: Mapped[int] = mapped_column(Integer, default=300)
 
     user: Mapped["User"] = relationship("User", back_populates="farmer_profile")
-    farms: Mapped[List["Farm"]] = relationship("Farm", back_populates="farmer")
-
-
-class Farm(Base):
-    __tablename__ = "farms"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    farmer_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("farmers.id", ondelete="CASCADE"), nullable=False
-    )
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    size_in_acres: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-
-    farmer: Mapped["Farmer"] = relationship("Farmer", back_populates="farms")
