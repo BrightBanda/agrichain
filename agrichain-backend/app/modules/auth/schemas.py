@@ -66,3 +66,19 @@ class UserRegisterResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserListResponse(BaseModel):
+    users: list[UserRegisterResponse]
+    total: int
+
+
+class LoginRequest(BaseModel):
+    phone_number: str = Field(..., example="+265999123456")
+    password: str = Field(..., min_length=6, example="Password123!")
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserRegisterResponse
