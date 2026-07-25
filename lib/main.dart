@@ -1,3 +1,4 @@
+import 'package:agri/src/presentation/view/AccountSelectionPage.dart';
 import 'package:agri/src/presentation/view/landing_page.dart';
 import 'package:flutter/material.dart';
 
@@ -17,8 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: const LandingPage(),
-  
+      home: const AccountSelectionPage(),
     );
   }
 
