@@ -1,5 +1,7 @@
 import 'package:agri/src/presentation/view/AccountSelectionPage.dart';
+import 'package:agri/src/presentation/view/SecurityPasswordPage.dart';
 import 'package:agri/src/presentation/view/landing_page.dart';
+import 'package:agri/src/presentation/view/sign_in_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -18,7 +20,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: const AccountSelectionPage(),
+      home: const SecurityPasswordPage (),
     );
   }
 
