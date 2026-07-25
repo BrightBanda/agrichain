@@ -7,6 +7,7 @@ from app.core.database import engine, Base
 from app.api.v1.router import api_v1_router
 
 import app.modules.farmers.models
+import app.modules.products.models
 
 
 @asynccontextmanager
