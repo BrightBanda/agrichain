@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../config/app_config.dart';
 
@@ -29,12 +30,26 @@ class ApiException implements Exception {
         );
       case DioExceptionType.connectionError:
       case DioExceptionType.unknown:
+        // In a browser, a CORS rejection is indistinguishable from an offline
+        // network: the spec forbids JavaScript from seeing the response, so Dio
+        // reports the same generic error either way. Naming both causes and the
+        // URL actually being called turns a dead end into something diagnosable
+        // — "check your connection" sends you looking in the wrong place.
+        if (kIsWeb) {
+          return ApiException(
+            'Could not reach ${AppConfig.apiBaseUrl}.\n'
+            'Either the server is down, or it refused this website '
+            '(a CORS rejection looks identical to being offline in a browser). '
+            'If the site works elsewhere, try a private window — an old cached '
+            'build may be calling the wrong address.',
+          );
+        }
         return ApiException(
           AppConfig.usesHostedApi
-              ? 'Cannot reach the AgriChain server. Check your internet '
+              ? 'Could not reach ${AppConfig.apiBaseUrl}. Check your internet '
                     'connection and try again.'
-              : 'Cannot reach the AgriChain server. Check your connection and '
-                    'confirm the backend is running.',
+              : 'Could not reach ${AppConfig.apiBaseUrl}. Check your connection '
+                    'and confirm the backend is running.',
         );
       case DioExceptionType.cancel:
         return const ApiException('The request was cancelled.');

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:agri/src/core/config/app_config.dart';
 import 'package:agri/src/core/network/api_exception.dart';
 import 'package:agri/src/data/models/auth_session.dart';
 import 'package:agri/src/data/models/enums.dart';
@@ -166,7 +167,7 @@ void main() {
       expect(error.message, contains('product_name: Field required'));
     });
 
-    test('reports an unreachable server plainly', () {
+    test('names the URL it could not reach', () {
       final error = ApiException.fromDio(
         DioException(
           requestOptions: RequestOptions(path: '/products'),
@@ -174,7 +175,21 @@ void main() {
         ),
       );
 
-      expect(error.message, contains('Cannot reach'));
+      expect(error.message, contains('Could not reach'));
+      // The address is the single most useful detail: pointing at the wrong
+      // host is indistinguishable from being offline without it.
+      expect(error.message, contains(AppConfig.apiBaseUrl));
+    });
+
+    test('a timeout blames a cold start, not the network', () {
+      final error = ApiException.fromDio(
+        DioException(
+          requestOptions: RequestOptions(path: '/products'),
+          type: DioExceptionType.connectionTimeout,
+        ),
+      );
+
+      expect(error.message, contains('try again'));
     });
   });
 }
