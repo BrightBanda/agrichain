@@ -4,16 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/product.dart';
-import '../../utils/app_brand_header.dart';
 import '../../utils/pill_badge.dart';
 import '../../utils/section_header.dart';
 import '../../utils/service_selector.dart';
 import '../../utils/stat_tile.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/product_list_view_model.dart';
-import 'loans_page.dart' show initialsOf;
 import 'marketplace_page.dart';
 import 'product_form_page.dart';
+import 'widgets/app_header.dart';
 import 'widgets/ledger_widgets.dart';
 
 /// Home for a service provider (FR-11).
@@ -52,11 +51,9 @@ class ServiceProviderHomePage extends ConsumerWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
             children: [
-              AppBrandHeader(
-                roleLabel: 'Service Provider',
+              const AppHeader(
                 subtitle: 'My Shop',
-                avatarInitials: initialsOf(user?.displayName),
-                onAvatarTap: () => _confirmSignOut(context, ref),
+                roleLabel: 'Service Provider',
               ),
               const SizedBox(height: 16),
 
@@ -152,31 +149,6 @@ class ServiceProviderHomePage extends ConsumerWidget {
     await ref.read(productListViewModelProvider.notifier).refresh();
   }
 
-  Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
-    final shouldSignOut = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text(
-          'You will need your phone number and password to sign back in.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Sign out'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldSignOut ?? false) {
-      await ref.read(authViewModelProvider.notifier).signOut();
-    }
-  }
 }
 
 class _BusinessCard extends StatelessWidget {

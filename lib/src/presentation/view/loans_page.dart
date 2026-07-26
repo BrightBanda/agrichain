@@ -5,7 +5,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/lending_score.dart';
 import '../../data/models/loan_product.dart';
-import '../../utils/app_brand_header.dart';
 import '../../utils/credit_header_card.dart';
 import '../../utils/filter_bar.dart';
 import '../../utils/loan_offer_card.dart';
@@ -14,6 +13,7 @@ import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/farmer_dashboard_view_model.dart';
 import '../viewmodel/loan_marketplace_view_model.dart';
 import 'my_loans_page.dart';
+import 'widgets/app_header.dart';
 import 'widgets/ledger_widgets.dart';
 
 /// The Agri Loan Marketplace (FR-15, FR-16).
@@ -45,11 +45,7 @@ class LoansPage extends ConsumerWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
-              AppBrandHeader(
-                roleLabel: user?.role.label ?? 'Farmer',
-                subtitle: 'Loans',
-                avatarInitials: initialsOf(user?.displayName),
-              ),
+              const AppHeader(subtitle: 'Loans'),
               const SizedBox(height: 16),
 
               CreditHeaderCard(
@@ -95,15 +91,6 @@ class LoansPage extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// Two initials for the avatar, shared by the screens that show the header.
-String? initialsOf(String? name) {
-  if (name == null || name.trim().isEmpty) return null;
-  final parts = name.trim().split(RegExp(r'\s+'));
-  if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-  return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
-      .toUpperCase();
 }
 
 class _Filters extends ConsumerWidget {

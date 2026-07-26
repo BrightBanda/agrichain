@@ -7,7 +7,6 @@ import '../../data/models/harvest.dart';
 import '../../data/models/lending_score.dart';
 import '../../data/models/score_history.dart';
 import '../../utils/analytics_colors.dart';
-import '../../utils/app_brand_header.dart';
 import '../../utils/monthly_progress_bar.dart';
 import '../../utils/pill_badge.dart';
 import '../../utils/sample_data_notice.dart';
@@ -19,7 +18,7 @@ import '../../utils/work_log_tile.dart';
 import '../viewmodel/analytics_view_model.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/farmer_dashboard_view_model.dart';
-import 'loans_page.dart' show initialsOf;
+import 'widgets/app_header.dart';
 import 'widgets/ledger_widgets.dart';
 
 /// My Analytics: Overview, Lending Score, and Farm & Harvest.
@@ -56,11 +55,7 @@ class _MyAnalyticsPageState extends ConsumerState<MyAnalyticsPage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
-              AppBrandHeader(
-                roleLabel: user?.role.label ?? 'Farmer',
-                subtitle: 'My Analytics',
-                avatarInitials: initialsOf(user?.displayName),
-              ),
+              const AppHeader(subtitle: 'My Analytics'),
               const SizedBox(height: 16),
 
               Row(

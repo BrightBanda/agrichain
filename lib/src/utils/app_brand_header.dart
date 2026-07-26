@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import 'pill_badge.dart';
 
-/// The top bar: brand, role badge, language chip, notifications and avatar.
+/// The header shown at the top of every signed-in screen.
 ///
-/// [onLanguageTap] and [onNotificationsTap] are optional so a screen can leave
-/// an affordance disabled rather than pretending it works.
+/// Laid out as two rows rather than one: a compact utility row of actions, then
+/// the brand centred beneath it. Centring the brand in the *same* row as the
+/// actions would either push them off a narrow screen or leave the brand
+/// visibly off-centre, since true centring cannot account for unequal side
+/// widths.
+///
+/// Callbacks are optional so a screen can omit an affordance entirely rather
+/// than showing one that does nothing.
 class AppBrandHeader extends StatelessWidget {
   final String roleLabel;
   final String subtitle;
@@ -16,6 +22,12 @@ class AppBrandHeader extends StatelessWidget {
   final VoidCallback? onLanguageTap;
   final VoidCallback? onNotificationsTap;
   final VoidCallback? onAvatarTap;
+
+  /// Opens the ledger explorer. Null hides the action.
+  final VoidCallback? onLedgerTap;
+
+  /// Opens the USSD simulator. Null hides the action.
+  final VoidCallback? onUssdTap;
 
   const AppBrandHeader({
     super.key,
@@ -27,84 +39,172 @@ class AppBrandHeader extends StatelessWidget {
     this.onLanguageTap,
     this.onNotificationsTap,
     this.onAvatarTap,
+    this.onLedgerTap,
+    this.onUssdTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Utility row: language on the left, account actions on the right.
         Row(
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: AppColors.cardTint,
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: const Icon(
-                Icons.eco,
-                size: 18,
-                color: AppColors.primaryMuted,
-              ),
-            ),
-            const SizedBox(width: 8),
-            // The brand and role badge yield space to the fixed-width actions
-            // on the right rather than pushing them off the screen.
-            Flexible(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Flexible(
-                    child: Text(
-                      'AgriChain',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                      style: TextStyle(
-                        fontSize: 16.5,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: PillBadge(
-                      text: roleLabel,
-                      background: AppColors.goldSoft,
-                      foreground: AppColors.gold,
-                      dense: true,
-                      uppercase: true,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
             _LanguageChip(code: languageCode, onTap: onLanguageTap),
-            const SizedBox(width: 8),
+            const Spacer(),
+            if (onUssdTap != null) ...[
+              _UssdChip(onTap: onUssdTap!),
+              const SizedBox(width: 7),
+            ],
+            if (onLedgerTap != null) ...[
+              _CircleAction(
+                icon: Icons.link,
+                tooltip: 'AgriChain ledger',
+                onTap: onLedgerTap!,
+              ),
+              const SizedBox(width: 7),
+            ],
             _NotificationBell(
               count: notificationCount,
               onTap: onNotificationsTap,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 7),
             _Avatar(initials: avatarInitials, onTap: onAvatarTap),
           ],
         ),
+        const SizedBox(height: 14),
+
+        // Brand, centred and prominent.
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppColors.cardTint,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.eco,
+                size: 23,
+                color: AppColors.primaryMuted,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Flexible(
+              child: Text(
+                'AgriChain',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ),
+            const SizedBox(width: 9),
+            Flexible(
+              child: PillBadge(
+                text: roleLabel,
+                background: AppColors.goldSoft,
+                foreground: AppColors.gold,
+                uppercase: true,
+              ),
+            ),
+          ],
+        ),
+
         if (subtitle.isNotEmpty) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Text(
             subtitle,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 14.5,
               fontWeight: FontWeight.w600,
               color: AppColors.textMuted,
             ),
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Text button reading "USSD" — the entry point to the low-connectivity menu.
+class _UssdChip extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _UssdChip({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'USSD menu (simulation)',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.dialpad, size: 13, color: Colors.white),
+              SizedBox(width: 5),
+              Text(
+                'USSD',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CircleAction extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _CircleAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.cardBorder),
+          ),
+          child: Icon(icon, size: 17, color: AppColors.primaryMuted),
+        ),
+      ),
     );
   }
 }
@@ -121,7 +221,7 @@ class _LanguageChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -129,19 +229,19 @@ class _LanguageChip extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.language, size: 13, color: AppColors.primaryMuted),
+            const Icon(Icons.language, size: 14, color: AppColors.primaryMuted),
             const SizedBox(width: 4),
             Text(
               code,
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 11.5,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primaryMuted,
               ),
             ),
             const Icon(
               Icons.keyboard_arrow_down,
-              size: 15,
+              size: 16,
               color: AppColors.primaryMuted,
             ),
           ],
@@ -163,7 +263,7 @@ class _NotificationBell extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -209,8 +309,8 @@ class _Avatar extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: 30,
-        height: 30,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: AppColors.cardTint,
           shape: BoxShape.circle,
@@ -218,11 +318,11 @@ class _Avatar extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: initials == null || initials!.isEmpty
-            ? const Icon(Icons.person, size: 17, color: AppColors.primaryMuted)
+            ? const Icon(Icons.person, size: 18, color: AppColors.primaryMuted)
             : Text(
                 initials!,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary,
                 ),

@@ -5,7 +5,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/user.dart';
 import '../../utils/active_loan_card.dart';
-import '../../utils/app_brand_header.dart';
 import '../../utils/money_score_card.dart';
 import '../../utils/profile_summary_card.dart';
 import '../../utils/quick_action_tile.dart';
@@ -18,6 +17,7 @@ import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/farmer_dashboard_view_model.dart';
 import 'blockchain_explorer_page.dart';
 import 'score_details_page.dart';
+import 'widgets/app_header.dart';
 import 'widgets/ledger_widgets.dart';
 
 /// The farmer's home screen.
@@ -48,7 +48,7 @@ class FarmerHomePage extends ConsumerWidget {
             AsyncValue(hasError: true, :final error) => ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                _header(context, ref, user),
+                const AppHeader(subtitle: 'Home'),
                 const SizedBox(height: 40),
                 LedgerErrorState(
                   message: '$error',
@@ -59,13 +59,13 @@ class FarmerHomePage extends ConsumerWidget {
             AsyncValue(hasValue: true, :final value?) => _Dashboard(
               user: user,
               dashboard: value,
-              header: _header(context, ref, user),
+              header: const AppHeader(subtitle: 'Home'),
               onNavigateToTab: onNavigateToTab,
             ),
             _ => ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                _header(context, ref, user),
+                const AppHeader(subtitle: 'Home'),
                 const SizedBox(height: 80),
                 const Center(
                   child: CircularProgressIndicator(color: AppColors.primary),
@@ -75,17 +75,6 @@ class FarmerHomePage extends ConsumerWidget {
           },
         ),
       ),
-    );
-  }
-
-  Widget _header(BuildContext context, WidgetRef ref, User? user) {
-    return AppBrandHeader(
-      roleLabel: user?.role.label ?? 'Farmer',
-      avatarInitials: _initials(user?.displayName),
-      // No notifications endpoint yet, so the bell is inert rather than fake.
-      onNotificationsTap: () => _notAvailable(context, 'Notifications'),
-      onLanguageTap: () => _notAvailable(context, 'Language switching'),
-      onAvatarTap: () => _confirmSignOut(context, ref),
     );
   }
 
@@ -105,31 +94,6 @@ class FarmerHomePage extends ConsumerWidget {
         .toUpperCase();
   }
 
-  static Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
-    final shouldSignOut = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text(
-          'You will need your phone number and password to sign back in.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Sign out'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldSignOut ?? false) {
-      await ref.read(authViewModelProvider.notifier).signOut();
-    }
-  }
 }
 
 class _Dashboard extends ConsumerWidget {

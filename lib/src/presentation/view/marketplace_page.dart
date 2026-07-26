@@ -5,15 +5,14 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/enums.dart';
 import '../../data/models/product.dart';
-import '../../utils/app_brand_header.dart';
 import '../../utils/filter_bar.dart';
 import '../../utils/product_grid_card.dart';
 import '../../utils/segmented_toggle.dart';
 import '../../utils/service_selector.dart' show iconForProductType;
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/product_list_view_model.dart';
-import 'loans_page.dart' show initialsOf;
 import 'product_form_page.dart';
+import 'widgets/app_header.dart';
 import 'widgets/ledger_widgets.dart';
 
 /// The produce and livestock marketplace (FR-09).
@@ -74,11 +73,7 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
-              AppBrandHeader(
-                roleLabel: user?.role.label ?? 'Farmer',
-                subtitle: 'Marketplace',
-                avatarInitials: initialsOf(user?.displayName),
-              ),
+              const AppHeader(subtitle: 'Marketplace'),
               const SizedBox(height: 16),
 
               SegmentedToggle(
