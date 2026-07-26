@@ -13,6 +13,7 @@ import app.modules.credit_engine.models
 import app.modules.farmers.models
 import app.modules.loans.models
 import app.modules.products.models
+import app.modules.suppliers.models
 
 
 @asynccontextmanager
@@ -30,10 +31,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_cors_origins = settings.cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    # Browsers reject credentialed requests against a wildcard origin, and the
+    # API authenticates with bearer tokens rather than cookies, so credentials
+    # are only enabled once the origins are explicitly listed.
+    allow_credentials=_cors_origins != ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -33,6 +33,10 @@ class LoanProductResponse(BaseModel):
     is_active: bool
     created_at: datetime
 
+    # Denormalised so the loan marketplace needs only one call.
+    institution_name: Optional[str] = None
+    monthly_fee_percent: Optional[Decimal] = None
+
     class Config:
         from_attributes = True
 

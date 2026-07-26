@@ -72,6 +72,28 @@ class LoanProduct(Base):
         DateTime, server_default=func.now(), nullable=False
     )
 
+    institution: Mapped["User"] = relationship(
+        "User", foreign_keys=[institution_user_id]
+    )
+
+    @property
+    def institution_name(self) -> Optional[str]:
+        """The lender's name for the marketplace card.
+
+        Requires the institution to be eager-loaded; see _WITH_INSTITUTION in
+        the router.
+        """
+        return self.institution.display_name if self.institution else None
+
+    @property
+    def monthly_fee_percent(self) -> decimal.Decimal:
+        """Interest expressed per month, which is how farmers compare offers."""
+        if self.repayment_period_months <= 0:
+            return decimal.Decimal("0")
+        return (self.interest_rate / self.repayment_period_months).quantize(
+            decimal.Decimal("0.01")
+        )
+
 
 class Loan(Base):
     """A farmer's loan application and, once approved, the loan itself."""

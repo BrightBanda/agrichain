@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../viewmodel/auth_view_model.dart';
 import 'AccountSelectionPage.dart';
 import 'farmer_shell_page.dart';
+import 'service_provider_home_page.dart';
 
 /// Chooses the root screen from the restored session.
 ///
@@ -22,9 +23,13 @@ class AuthGate extends ConsumerWidget {
       return const _SplashScreen();
     }
 
-    return authState.value is Authenticated
-        ? const FarmerShellPage()
-        : const AccountSelectionPage();
+    final auth = authState.value;
+    if (auth is! Authenticated) return const AccountSelectionPage();
+
+    // Each role gets its own home. A service provider only lists inputs, so the
+    // farmer shell's score, loans and harvest tabs would be meaningless to it.
+    if (auth.user.isServiceProvider) return const ServiceProviderHomePage();
+    return const FarmerShellPage();
   }
 }
 

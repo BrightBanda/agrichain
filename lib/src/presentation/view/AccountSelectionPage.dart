@@ -1,5 +1,6 @@
 import 'package:agri/src/presentation/view/farmer_register_page.dart';
 import 'package:agri/src/presentation/view/login_page.dart';
+import 'package:agri/src/presentation/view/service_provider_register_page.dart';
 import 'package:agri/src/utils/role_card.dart';
 import 'package:flutter/material.dart';
 
@@ -144,31 +145,22 @@ class AccountSelectionPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // 5. Loan Institution Card
+              // 5. Service Provider Card
               RoleCard(
-                tagText: '🏦 REGISTER AS LOAN INSTITUTION',
-                tagColor: const Color(0xFFEEF2FF),
-                tagTextColor: const Color(0xFF2563EB),
-                title: 'Loan Institution Portal',
+                tagText: '🚜 REGISTER AS SERVICE PROVIDER',
+                tagColor: const Color(0xFFFFF3D6),
+                tagTextColor: const Color(0xFF8A5A00),
+                title: 'Service Provider Account',
                 description:
-                    'Review farmer loan requests, verify yield records, disburse input vouchers.',
-                actionText: 'Register Loan Institution',
-                borderColor: const Color(0xFFD0E1FD),
-                icon: Icons.apartment_outlined,
-                iconBgColor: const Color(0xFFE0EBFF),
-                iconColor: const Color(0xFF2563EB),
-                // The backend only exposes /auth/register/farmer today.
-                onTap: () {
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Loan institution registration is not available yet.',
-                        ),
-                      ),
-                    );
-                },
+                    'Sell seeds, fertilizer, sprays and equipment to farmers on '
+                    'the marketplace.',
+                actionText: 'Register Service Provider',
+                borderColor: const Color(0xFFF0DDB0),
+                icon: Icons.storefront_outlined,
+                iconBgColor: const Color(0xFFFFF0CC),
+                iconColor: const Color(0xFF8A5A00),
+                onTap: () =>
+                    _open(context, const ServiceProviderRegisterPage()),
               ),
               const SizedBox(height: 32),
 

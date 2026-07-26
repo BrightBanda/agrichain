@@ -7,7 +7,10 @@ from app.core.config import settings
 # Create async database engine
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=True,  # Set to False in production to disable SQL query logs in console
+    # Echo prints every statement *with its bound parameters*, which includes
+    # password hashes and personal data, so it follows DEBUG rather than being
+    # left on.
+    echo=settings.DEBUG,
     future=True,
 )
 

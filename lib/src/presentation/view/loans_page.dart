@@ -3,97 +3,238 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
-import '../../data/models/loan.dart';
-import '../../data/repositories/farm_repository.dart';
-import '../../utils/pill_badge.dart';
+import '../../data/models/lending_score.dart';
+import '../../data/models/loan_product.dart';
+import '../../utils/app_brand_header.dart';
+import '../../utils/credit_header_card.dart';
+import '../../utils/filter_bar.dart';
+import '../../utils/loan_offer_card.dart';
 import '../../utils/section_header.dart';
+import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/farmer_dashboard_view_model.dart';
+import '../viewmodel/loan_marketplace_view_model.dart';
+import 'my_loans_page.dart';
 import 'widgets/ledger_widgets.dart';
 
-/// The Loans tab: the farmer's own loans and their repayment state.
+/// The Agri Loan Marketplace (FR-15, FR-16).
 ///
-/// Applying for a loan is not built as a screen yet — `POST /loans/apply` and
-/// the loan marketplace exist on the backend but have no UI.
+/// Offers, eligibility and the apply flow all run against the live backend. The
+/// farmer's own loans live on [MyLoansPage], reached from the balance link.
 class LoansPage extends ConsumerWidget {
   const LoansPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(farmerDashboardProvider);
+    final user = ref.watch(currentUserProvider);
+    final dashboard = ref.watch(farmerDashboardProvider);
+    final offers = ref.watch(loanMarketplaceProvider);
+
+    final score = dashboard.value?.score ?? LendingScore.initial();
+    final owed = dashboard.value?.moneyOwed ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        foregroundColor: AppColors.textHeading,
-        title: const Text(
-          'My Loans',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-      ),
       body: SafeArea(
+        bottom: false,
         child: RefreshIndicator(
           color: AppColors.primary,
-          onRefresh: () => ref.read(farmerDashboardProvider.notifier).refresh(),
-          child: switch (state) {
-            AsyncValue(hasError: true, :final error) => LedgerErrorState(
-              message: '$error',
-              onRetry: () => ref.invalidate(farmerDashboardProvider),
-            ),
-            AsyncValue(hasValue: true, :final value?) => ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-              children: [
-                _OwedSummary(owed: value.moneyOwed),
-                const SizedBox(height: 20),
-                const SectionHeader(title: 'Loan History'),
-                const SizedBox(height: 10),
-                if (value.loans.isEmpty)
-                  const _NoLoans()
-                else
-                  for (final loan in value.loans)
-                    _LoanCard(
-                      loan: loan,
-                      onRepay: loan.isActive
-                          ? () => _repay(context, ref, loan)
-                          : null,
-                    ),
-              ],
-            ),
-            _ => const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ),
+          onRefresh: () async {
+            await ref.read(loanMarketplaceProvider.notifier).refresh();
+            await ref.read(farmerDashboardProvider.notifier).refresh();
           },
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            children: [
+              AppBrandHeader(
+                roleLabel: user?.role.label ?? 'Farmer',
+                subtitle: 'Loans',
+                avatarInitials: initialsOf(user?.displayName),
+              ),
+              const SizedBox(height: 16),
+
+              CreditHeaderCard(
+                title: 'Agri Loan Marketplace',
+                badgeText: (user?.isVerified ?? false)
+                    ? 'Approved Farmer Credit'
+                    : 'Verification Pending',
+                qualifyingText:
+                    'Your lending score (${score.score} pts) qualifies you for '
+                    'loans up to ${formatMwk(score.borrowCapacity)}. Each '
+                    'institution still makes its own decision.',
+                balanceLabel: owed > 0
+                    ? 'My Current Balance'
+                    : 'My Loan History',
+                onBalanceTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MyLoansPage()),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              const _Filters(),
+              const SizedBox(height: 20),
+
+              const SectionHeader(title: 'Available Loans'),
+              const SizedBox(height: 12),
+
+              switch (offers) {
+                AsyncValue(hasError: true, :final error) => LedgerErrorState(
+                  message: '$error',
+                  onRetry: () => ref.invalidate(loanMarketplaceProvider),
+                ),
+                AsyncValue(hasValue: true) => _Offers(score: score),
+                _ => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                ),
+              },
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Future<void> _repay(BuildContext context, WidgetRef ref, Loan loan) async {
+/// Two initials for the avatar, shared by the screens that show the header.
+String? initialsOf(String? name) {
+  if (name == null || name.trim().isEmpty) return null;
+  final parts = name.trim().split(RegExp(r'\s+'));
+  if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+  return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+      .toUpperCase();
+}
+
+class _Filters extends ConsumerWidget {
+  const _Filters();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedType = ref.watch(loanTypeFilterProvider);
+    final selectedInstitution = ref.watch(loanInstitutionFilterProvider);
+    final institutions = ref.watch(loanInstitutionsProvider);
+    final anyActive = selectedType != null || selectedInstitution != null;
+
+    return Row(
+      children: [
+        Expanded(
+          child: FilterDropdown<LoanType>(
+            allLabel: 'All Loan Types',
+            value: selectedType,
+            options: LoanType.values,
+            labelOf: (type) => type.label,
+            emphasised: true,
+            onChanged: (type) =>
+                ref.read(loanTypeFilterProvider.notifier).select(type),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: FilterDropdown<String>(
+            allLabel: 'All Institutions',
+            value: selectedInstitution,
+            options: institutions,
+            labelOf: (name) => name,
+            onChanged: (name) =>
+                ref.read(loanInstitutionFilterProvider.notifier).select(name),
+          ),
+        ),
+        const SizedBox(width: 10),
+        FilterIconButton(
+          active: anyActive,
+          // Clears both filters; there is no further filter sheet yet.
+          onTap: anyActive
+              ? () {
+                  ref.read(loanTypeFilterProvider.notifier).select(null);
+                  ref.read(loanInstitutionFilterProvider.notifier).select(null);
+                }
+              : null,
+        ),
+      ],
+    );
+  }
+}
+
+class _Offers extends ConsumerWidget {
+  final LendingScore score;
+
+  const _Offers({required this.score});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final offers = ref.watch(filteredLoanProductsProvider);
+    final total = ref.watch(loanMarketplaceProvider).value?.length ?? 0;
+
+    if (offers.isEmpty) {
+      return _EmptyOffers(filtered: total > 0);
+    }
+
+    return Column(
+      children: [
+        for (final offer in offers)
+          LoanOfferCard(
+            institutionName: offer.institutionName ?? 'Financial Institution',
+            name: offer.name,
+            description: offer.description,
+            monthlyFeeText: '${offer.monthlyFee.toStringAsFixed(1)}% / month',
+            maxAmountText: formatMwk(offer.maxAmount),
+            eligibilityText: offer.isEligible(score.score)
+                ? 'Eligible'
+                : '${offer.matchPercent(score.score)}% Match',
+            isEligible: offer.isEligible(score.score),
+            ineligibleHint: offer.isEligible(score.score)
+                ? null
+                : 'You need ${offer.pointsShort(score.score)} more points. '
+                      'Record a harvest and have it verified to get there.',
+            terms: offer.terms,
+            actionLabel: offer.isEligible(score.score)
+                ? 'Apply For ${offer.name}'
+                : 'Not Yet Eligible',
+            onApply: offer.isEligible(score.score)
+                ? () => _apply(context, ref, offer)
+                : null,
+          ),
+      ],
+    );
+  }
+
+  Future<void> _apply(
+    BuildContext context,
+    WidgetRef ref,
+    LoanProduct offer,
+  ) async {
+    // Default to the farmer's own headroom rather than the product ceiling, so
+    // the pre-filled figure is one the backend will accept.
+    final suggested = score.borrowCapacity < offer.maxAmount
+        ? score.borrowCapacity
+        : offer.maxAmount;
     final controller = TextEditingController(
-      text: loan.outstandingBalance.toStringAsFixed(0),
+      text: suggested <= 0 ? '' : suggested.toStringAsFixed(0),
     );
 
     final amount = await showDialog<double>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Make a repayment'),
+        title: Text(offer.name),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Outstanding balance: ${formatMwk(loan.outstandingBalance)}',
-              style: const TextStyle(fontSize: 12.5),
+              '${offer.institutionName ?? 'The institution'} lends up to '
+              '${formatMwk(offer.maxAmount)} at ${offer.interestRate}% over '
+              '${offer.repaymentPeriodMonths} months.',
+              style: const TextStyle(fontSize: 12.5, height: 1.4),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             TextField(
               controller: controller,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               decoration: const InputDecoration(
-                labelText: 'Amount (MWK)',
+                labelText: 'How much do you need? (MWK)',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -105,11 +246,10 @@ class LoansPage extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              final parsed = double.tryParse(controller.text.trim());
-              Navigator.of(dialogContext).pop(parsed);
-            },
-            child: const Text('Pay'),
+            onPressed: () => Navigator.of(
+              dialogContext,
+            ).pop(double.tryParse(controller.text.trim())),
+            child: const Text('Apply'),
           ),
         ],
       ),
@@ -119,20 +259,20 @@ class LoansPage extends ConsumerWidget {
 
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(farmRepositoryProvider).repayLoan(
-        loanId: loan.id,
+      await ref.read(loanMarketplaceProvider.notifier).apply(
+        loanProductId: offer.id,
         amount: amount,
-        // The backend rejects duplicate references, which is what stops a
-        // double-tap from being recorded as two payments.
-        reference: 'APP-${DateTime.now().microsecondsSinceEpoch}',
       );
-      await ref.read(farmerDashboardProvider.notifier).refresh();
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
             backgroundColor: AppColors.primary,
-            content: Text('Repayment of ${formatMwk(amount)} recorded.'),
+            duration: const Duration(seconds: 5),
+            content: Text(
+              'Applied for ${formatMwk(amount)}. '
+              '${offer.institutionName ?? 'The institution'} will review it.',
+            ),
           ),
         );
     } catch (error) {
@@ -141,6 +281,7 @@ class LoansPage extends ConsumerWidget {
         ..showSnackBar(
           SnackBar(
             backgroundColor: Colors.red.shade700,
+            duration: const Duration(seconds: 6),
             content: Text('$error'),
           ),
         );
@@ -148,208 +289,17 @@ class LoansPage extends ConsumerWidget {
   }
 }
 
-class _OwedSummary extends StatelessWidget {
-  final double owed;
+class _EmptyOffers extends StatelessWidget {
+  /// True when offers exist but the filters hide them all.
+  final bool filtered;
 
-  const _OwedSummary({required this.owed});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDark,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Total still to pay back',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            formatMwk(owed),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          if (owed <= 0) ...[
-            const SizedBox(height: 4),
-            const Text(
-              'You have no outstanding loans.',
-              style: TextStyle(color: Colors.white70, fontSize: 11.5),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _LoanCard extends StatelessWidget {
-  final Loan loan;
-  final VoidCallback? onRepay;
-
-  const _LoanCard({required this.loan, this.onRepay});
-
-  @override
-  Widget build(BuildContext context) {
-    final (background, foreground) = switch (loan.status) {
-      LoanStatus.active => (AppColors.warningSoft, AppColors.warning),
-      LoanStatus.repaid => (AppColors.accentSoft, AppColors.primary),
-      LoanStatus.rejected => (AppColors.dangerSoft, AppColors.danger),
-      LoanStatus.pending => (AppColors.surfaceMuted, AppColors.textMuted),
-    };
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  formatMwk(loan.amountApproved ?? loan.amountRequested),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textHeading,
-                  ),
-                ),
-              ),
-              PillBadge(
-                text: loan.status.label,
-                background: background,
-                foreground: foreground,
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${loan.interestRate.toStringAsFixed(1)}% interest'
-            '${loan.repaymentPeriodMonths == null ? '' : ' • ${loan.repaymentPeriodMonths} months'}',
-            style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-          ),
-          if (loan.totalPayable != null) ...[
-            const SizedBox(height: 10),
-            _DetailRow(
-              label: 'Total payable',
-              value: formatMwk(loan.totalPayable!),
-            ),
-            _DetailRow(label: 'Repaid', value: formatMwk(loan.amountRepaid)),
-            _DetailRow(
-              label: 'Outstanding',
-              value: formatMwk(loan.outstandingBalance),
-              emphasise: loan.outstandingBalance > 0,
-            ),
-            if (loan.dueDate != null)
-              _DetailRow(
-                label: loan.isOverdue ? 'Overdue since' : 'Due',
-                value: formatFullDate(loan.dueDate!),
-                emphasise: loan.isOverdue,
-              ),
-          ],
-          if (loan.decisionNote != null && loan.decisionNote!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              loan.decisionNote!,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontStyle: FontStyle.italic,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-          if (onRepay != null) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onRepay,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  'Pay Back',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool emphasise;
-
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.emphasise = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textMuted,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: emphasise ? AppColors.danger : AppColors.textHeading,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NoLoans extends StatelessWidget {
-  const _NoLoans();
+  const _EmptyOffers({required this.filtered});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 18),
+      padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -362,17 +312,19 @@ class _NoLoans extends StatelessWidget {
             size: 34,
             color: Colors.grey.shade400,
           ),
-          const SizedBox(height: 10),
-          const Text(
-            'No loans yet',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+          const SizedBox(height: 12),
+          Text(
+            filtered ? 'No loans match these filters' : 'No loans published yet',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Browsing and applying for loan products is not built into the app '
-            'yet — the endpoints exist, but there is no screen for it.',
+          Text(
+            filtered
+                ? 'Clear the filters to see every available offer.'
+                : 'Loan offers appear here once a financial institution '
+                      'publishes them.',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 11.5,
               color: AppColors.textMuted,
               height: 1.4,

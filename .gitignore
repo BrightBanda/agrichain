@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment / secrets — never commit these.
+# Use agrichain-backend/.env.example as the template.
+.env
+.env.*
+!.env.example
+*.env

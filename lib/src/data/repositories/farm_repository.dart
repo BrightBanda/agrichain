@@ -7,6 +7,8 @@ import '../../core/network/dio_client.dart';
 import '../models/harvest.dart';
 import '../models/lending_score.dart';
 import '../models/loan.dart';
+import '../models/loan_product.dart';
+import '../models/score_history.dart';
 
 /// Reads the farmer's own agricultural and financial record.
 ///
@@ -56,6 +58,57 @@ class FarmRepository {
         ApiEndpoints.lendingScore,
       );
       return LendingScore.fromJson(response.data ?? const {});
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  /// `GET /lending-score/history` — how the score moved over time (FR-13).
+  Future<List<ScoreHistoryEntry>> fetchScoreHistory() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiEndpoints.lendingScoreHistory,
+      );
+      final items = response.data?['entries'] as List? ?? const [];
+      return items
+          .whereType<Map>()
+          .map(
+            (json) => ScoreHistoryEntry.fromJson(json.cast<String, dynamic>()),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  /// `GET /loan-products` — the public loan marketplace (FR-15).
+  Future<List<LoanProduct>> fetchLoanProducts() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiEndpoints.loanProducts,
+        options: Options(extra: publicRequest),
+      );
+      final items = response.data?['loan_products'] as List? ?? const [];
+      return items
+          .whereType<Map>()
+          .map((json) => LoanProduct.fromJson(json.cast<String, dynamic>()))
+          .toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  /// `POST /loans/apply` — submit an application (FR-16).
+  Future<Loan> applyForLoan({
+    required String loanProductId,
+    required double amount,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiEndpoints.applyForLoan,
+        data: {'loan_product_id': loanProductId, 'amount_requested': amount},
+      );
+      return Loan.fromJson(response.data ?? const {});
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }

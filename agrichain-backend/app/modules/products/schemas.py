@@ -31,6 +31,10 @@ class ProductResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    # Denormalised seller details so the marketplace does not need a second call.
+    seller_name: Optional[str] = None
+    seller_verified: bool = False
+
     class Config:
         from_attributes = True
 

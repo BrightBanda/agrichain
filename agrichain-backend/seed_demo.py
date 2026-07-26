@@ -23,9 +23,12 @@ import sys
 import asyncpg
 import httpx
 
+from app.core.config import settings
+
 BASE = "http://127.0.0.1:8000/api/v1"
-DB = "postgresql://postgres:secretepassword@localhost:5432/agrichain_db"
-PASSWORD = "Password123!"
+# Credentials come from .env; nothing sensitive is hardcoded in this file.
+DB = settings.sync_database_url
+PASSWORD = settings.DEMO_ACCOUNT_PASSWORD
 
 FARMER_PHONE = "+265991000001"
 COOP_PHONE = "+265991000002"

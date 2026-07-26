@@ -8,6 +8,7 @@ from app.core.security import hash_password, verify_password, create_access_toke
 from app.modules.blockchain import canonical, service as ledger
 from app.modules.blockchain.events import LedgerEntity, LedgerEvent
 from app.modules.farmers.models import User, Farmer, UserRole
+from app.modules.suppliers.models import SupplierProfile
 from app.modules.auth.schemas import (
     FarmerRegisterRequest,
     OrganizationRegisterRequest,
@@ -98,7 +99,10 @@ async def register_farmer(
     # MissingGreenlet under asyncio.
     result = await db.execute(
         select(User)
-        .options(selectinload(User.farmer_profile))
+        .options(
+            selectinload(User.farmer_profile),
+            selectinload(User.supplier_profile),
+        )
         .where(User.id == new_user.id)
     )
     return result.scalars().first()
@@ -122,7 +126,7 @@ async def register_organization(
             detail="A user with this phone number is already registered.",
         )
 
-    institution = User(
+    organization = User(
         phone_number=payload.phone_number,
         email=payload.email,
         display_name=payload.display_name,
@@ -130,13 +134,29 @@ async def register_organization(
         role=payload.role,
         is_verified=False,
     )
-    db.add(institution)
+    db.add(organization)
+    await db.flush()
+
+    if payload.role is UserRole.SUPPLIER:
+        db.add(
+            SupplierProfile(
+                user_id=organization.id,
+                business_name=payload.display_name,
+                district=payload.district,
+                description=payload.description,
+                services=[service.value for service in payload.services or []],
+            )
+        )
+
     await db.commit()
 
     result = await db.execute(
         select(User)
-        .options(selectinload(User.farmer_profile))
-        .where(User.id == institution.id)
+        .options(
+            selectinload(User.farmer_profile),
+            selectinload(User.supplier_profile),
+        )
+        .where(User.id == organization.id)
     )
     return result.scalars().first()
 
@@ -144,7 +164,10 @@ async def register_organization(
 @router.get("/users", response_model=UserListResponse)
 async def get_all_users(db: AsyncSession = Depends(get_db)):
     """Get all registered users."""
-    result = await db.execute(select(User).options(selectinload(User.farmer_profile)))
+    result = await db.execute(select(User).options(
+            selectinload(User.farmer_profile),
+            selectinload(User.supplier_profile),
+        ))
     users = result.scalars().all()
     return UserListResponse(users=users, total=len(users))
 
@@ -155,7 +178,10 @@ async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
     # Find user by phone number
     result = await db.execute(
         select(User)
-        .options(selectinload(User.farmer_profile))
+        .options(
+            selectinload(User.farmer_profile),
+            selectinload(User.supplier_profile),
+        )
         .where(User.phone_number == payload.phone_number)
     )
     user = result.scalars().first()

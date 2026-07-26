@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 from app.modules.farmers.models import UserRole, Gender
+from app.modules.products.models import SUPPLY_TYPES, ProductType
 
 
 class FarmerRegisterRequest(BaseModel):
@@ -56,6 +57,17 @@ class FarmerProfileResponse(BaseModel):
         from_attributes = True
 
 
+class SupplierProfileResponse(BaseModel):
+    id: uuid.UUID
+    business_name: str
+    district: Optional[str]
+    description: Optional[str]
+    services: list[str]
+
+    class Config:
+        from_attributes = True
+
+
 class UserRegisterResponse(BaseModel):
     id: uuid.UUID
     phone_number: str
@@ -64,6 +76,7 @@ class UserRegisterResponse(BaseModel):
     is_verified: bool
     created_at: datetime
     farmer_profile: Optional[FarmerProfileResponse] = None
+    supplier_profile: Optional[SupplierProfileResponse] = None
 
     class Config:
         from_attributes = True
@@ -95,6 +108,16 @@ class OrganizationRegisterRequest(BaseModel):
     password: str = Field(..., min_length=6, example="Password123!")
     confirm_password: str = Field(..., example="Password123!")
 
+    # Service providers declare what they supply; this becomes the set of
+    # categories they are allowed to list (FR-11).
+    services: Optional[list[ProductType]] = Field(
+        None, example=[ProductType.SEEDS, ProductType.FERTILIZER]
+    )
+    district: Optional[str] = Field(None, example="Lilongwe")
+    description: Optional[str] = Field(
+        None, example="Certified seed and fertilizer supplier since 2014."
+    )
+
     @model_validator(mode="after")
     def verify_request(self):
         if self.password != self.confirm_password:
@@ -105,6 +128,24 @@ class OrganizationRegisterRequest(BaseModel):
                 f"role must be one of: {allowed}. Farmers register at "
                 f"/auth/register/farmer."
             )
+
+        if self.role is UserRole.SUPPLIER:
+            if not self.services:
+                allowed = ", ".join(sorted(t.value for t in SUPPLY_TYPES))
+                raise ValueError(
+                    f"A service provider must choose at least one service. "
+                    f"Options: {allowed}."
+                )
+            invalid = [t.value for t in self.services if t not in SUPPLY_TYPES]
+            if invalid:
+                allowed = ", ".join(sorted(t.value for t in SUPPLY_TYPES))
+                raise ValueError(
+                    f"{', '.join(invalid)} cannot be offered as a service. "
+                    f"Options: {allowed}."
+                )
+        elif self.services:
+            raise ValueError("Only service providers declare services.")
+
         return self
 
 

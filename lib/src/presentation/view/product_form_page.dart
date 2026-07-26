@@ -26,15 +26,28 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   final _quantity = TextEditingController();
   final _description = TextEditingController();
 
-  ProductType _productType = ProductType.cropsProduce;
+  ProductType? _productType;
   UnitType _unitType = UnitType.bag50kg;
+
+  /// Only the categories this account is entitled to list.
+  ///
+  /// The backend rejects anything else with a 403, so offering the full enum
+  /// would just produce avoidable errors.
+  List<ProductType> get _allowedTypes =>
+      ref.read(currentUserProvider)?.listableProductTypes ?? const [];
 
   @override
   void initState() {
     super.initState();
-    // Default the listing to the farmer's own district.
-    final district = ref.read(currentUserProvider)?.farmerProfile?.district;
+    final user = ref.read(currentUserProvider);
+
+    // Default the listing to the seller's own district.
+    final district =
+        user?.farmerProfile?.district ?? user?.supplierProfile?.district;
     if (district != null) _district.text = district;
+
+    final allowed = user?.listableProductTypes ?? const <ProductType>[];
+    if (allowed.isNotEmpty) _productType = allowed.first;
   }
 
   @override
@@ -53,13 +66,29 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final productType = _productType ?? _allowedTypes.firstOrNull;
+    if (productType == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Your account has no categories it can list. Register the '
+              'services you supply first.',
+            ),
+          ),
+        );
+      return;
+    }
+
     FocusScope.of(context).unfocus();
 
     final created = await ref
         .read(productFormViewModelProvider.notifier)
         .submit(
           ProductCreateRequest(
-            productType: _productType,
+            productType: productType,
             productName: _name.text.trim(),
             unitType: _unitType,
             district: _district.text.trim(),
@@ -137,9 +166,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
 
                 AppDropdownField<ProductType>(
                   label: 'Category',
-                  value: _productType,
+                  value: _productType ?? _allowedTypes.firstOrNull,
                   icon: Icons.category_outlined,
-                  items: ProductType.values
+                  items: _allowedTypes
                       .map(
                         (type) => DropdownMenuItem(
                           value: type,
@@ -147,9 +176,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                         ),
                       )
                       .toList(),
-                  onChanged: (value) => setState(
-                    () => _productType = value ?? ProductType.cropsProduce,
-                  ),
+                  onChanged: (value) => setState(() {
+                    if (value != null) _productType = value;
+                  }),
                 ),
                 AppTextField(
                   controller: _name,

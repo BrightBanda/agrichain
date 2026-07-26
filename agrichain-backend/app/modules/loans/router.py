@@ -79,8 +79,13 @@ async def publish_loan_product(
     )
     db.add(product)
     await db.commit()
-    await db.refresh(product)
-    return product
+
+    result = await db.execute(
+        select(LoanProduct)
+        .options(selectinload(LoanProduct.institution))
+        .where(LoanProduct.id == product.id)
+    )
+    return result.scalars().first()
 
 
 @router.get("/loan-products", response_model=LoanProductListResponse)
@@ -88,6 +93,9 @@ async def list_loan_products(db: AsyncSession = Depends(get_db)):
     """The loan marketplace farmers browse and compare."""
     result = await db.execute(
         select(LoanProduct)
+        # institution_name reads LoanProduct.institution; eager-load it or
+        # serialising the response raises MissingGreenlet.
+        .options(selectinload(LoanProduct.institution))
         .where(LoanProduct.is_active.is_(True))
         .order_by(LoanProduct.interest_rate.asc())
     )

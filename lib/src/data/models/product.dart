@@ -15,6 +15,10 @@ class Product {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  /// Seller details denormalised by the API so the grid needs one call.
+  final String? sellerName;
+  final bool sellerVerified;
+
   const Product({
     required this.id,
     required this.userId,
@@ -27,6 +31,8 @@ class Product {
     this.description,
     this.createdAt,
     this.updatedAt,
+    this.sellerName,
+    this.sellerVerified = false,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -42,7 +48,19 @@ class Product {
       description: json['description'] as String?,
       createdAt: asDateTime(json['created_at']),
       updatedAt: asDateTime(json['updated_at']),
+      sellerName: json['seller_name'] as String?,
+      sellerVerified: json['seller_verified'] as bool? ?? false,
     );
+  }
+
+  /// Matches a free-text search across the fields a farmer would type.
+  bool matchesQuery(String query) {
+    final needle = query.trim().toLowerCase();
+    if (needle.isEmpty) return true;
+    return productName.toLowerCase().contains(needle) ||
+        district.toLowerCase().contains(needle) ||
+        (sellerName ?? '').toLowerCase().contains(needle) ||
+        (description ?? '').toLowerCase().contains(needle);
   }
 
   /// e.g. `MK 45,000.00 / 50 kg Bag`

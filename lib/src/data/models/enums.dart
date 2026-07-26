@@ -38,14 +38,40 @@ enum Gender {
   );
 }
 
+/// What a listing is. Mirrors `ProductType` in `app/modules/products/models.py`.
+///
+/// The first two are what farmers sell; the rest are agricultural inputs sold by
+/// registered service providers (FR-11).
 enum ProductType {
-  cropsProduce('CROPS_PRODUCE', 'Crops & Produce'),
-  livestockAnimals('LIVESTOCK_ANIMALS', 'Livestock & Animals');
+  cropsProduce('CROPS_PRODUCE', 'Crops & Produce', 'Crops'),
+  livestockAnimals('LIVESTOCK_ANIMALS', 'Livestock & Animals', 'Livestock'),
+  seeds('SEEDS', 'Seeds', 'Seeds'),
+  fertilizer('FERTILIZER', 'Fertilizer', 'Fertiliser'),
+  pesticides('PESTICIDES', 'Pesticides & Sprays', 'Sprays'),
+  equipment('EQUIPMENT', 'Equipment & Tractors', 'Equipment'),
+  irrigation('IRRIGATION', 'Irrigation Supplies', 'Irrigation'),
+  livestockFeed('LIVESTOCK_FEED', 'Livestock Feed', 'Feed');
 
-  const ProductType(this.wireValue, this.label);
+  const ProductType(this.wireValue, this.label, this.shortLabel);
 
   final String wireValue;
   final String label;
+
+  /// Compact name for category chips.
+  final String shortLabel;
+
+  /// True for the two categories farmers may list.
+  bool get isFarmProduce =>
+      this == ProductType.cropsProduce || this == ProductType.livestockAnimals;
+
+  /// True for the inputs a service provider may list.
+  bool get isSupply => !isFarmProduce;
+
+  static List<ProductType> get farmProduce =>
+      values.where((type) => type.isFarmProduce).toList();
+
+  static List<ProductType> get supplies =>
+      values.where((type) => type.isSupply).toList();
 
   static ProductType fromJson(String? value) => values.firstWhere(
     (type) => type.wireValue == value,

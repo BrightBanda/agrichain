@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../utils/farm_bottom_nav.dart';
+import 'analytics_page.dart';
 import 'coming_soon_page.dart';
 import 'farmer_home_page.dart';
 import 'loans_page.dart';
@@ -45,14 +46,7 @@ class _FarmerShellPageState extends State<FarmerShellPage> {
           const MarketplacePage(),
           FarmerHomePage(onNavigateToTab: _selectIndex),
           const LoansPage(),
-          const ComingSoonPage(
-            title: 'My Analytics',
-            icon: Icons.bar_chart_outlined,
-            explanation:
-                'Yield trends and income reporting need the analytics module '
-                '(FR-15 reporting), which is not implemented yet. The lending '
-                'score breakdown is available from the home screen.',
-          ),
+          const MyAnalyticsPage(),
         ],
       ),
       bottomNavigationBar: FarmBottomNav(current: _current, onSelected: _select),

@@ -36,6 +36,25 @@ class AuthRepository {
     }
   }
 
+  /// `POST /auth/register/organization` with the SUPPLIER role.
+  ///
+  /// Like farmer registration, this issues no token, so the caller logs in
+  /// afterwards.
+  Future<User> registerServiceProvider(
+    ServiceProviderRegisterRequest request,
+  ) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiEndpoints.registerOrganization,
+        data: request.toJson(),
+        options: Options(extra: publicRequest),
+      );
+      return User.fromJson(response.data ?? const {});
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   /// `POST /auth/register/farmer`
   ///
   /// Returns the created user; the endpoint issues no token, so the caller

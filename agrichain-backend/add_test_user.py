@@ -1,17 +1,14 @@
 import asyncio
 from datetime import datetime
 
+from app.core.config import settings
 from app.core.security import hash_password
 from app.modules.farmers.models import Farmer, Gender, UserRole, User
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# Database connection
-DATABASE_URL = (
-    "postgresql+asyncpg://postgres:secretepassword@localhost:5432/agrichain_db"
-)
-
-engine = create_async_engine(DATABASE_URL, echo=True)
+# Database connection comes from .env — never hardcode credentials here.
+engine = create_async_engine(settings.DATABASE_URL, echo=settings.DEBUG)
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,

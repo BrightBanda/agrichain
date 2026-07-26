@@ -62,6 +62,45 @@ class FarmerRegisterRequest {
   };
 }
 
+/// Mirrors `OrganizationRegisterRequest` for the service-provider case.
+///
+/// [services] is required by the backend for SUPPLIER accounts and must contain
+/// only supply categories.
+class ServiceProviderRegisterRequest {
+  final String businessName;
+  final String phoneNumber;
+  final String password;
+  final String confirmPassword;
+  final List<ProductType> services;
+  final String? district;
+  final String? description;
+  final String? email;
+
+  const ServiceProviderRegisterRequest({
+    required this.businessName,
+    required this.phoneNumber,
+    required this.password,
+    required this.confirmPassword,
+    required this.services,
+    this.district,
+    this.description,
+    this.email,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'display_name': businessName,
+    'role': UserRole.supplier.wireValue,
+    'phone_number': phoneNumber,
+    'password': password,
+    'confirm_password': confirmPassword,
+    'services': services.map((service) => service.wireValue).toList(),
+    if (district != null && district!.isNotEmpty) 'district': district,
+    if (description != null && description!.isNotEmpty)
+      'description': description,
+    if (email != null && email!.isNotEmpty) 'email': email,
+  };
+}
+
 /// Mirrors `ProductCreateRequest`.
 class ProductCreateRequest {
   final ProductType productType;

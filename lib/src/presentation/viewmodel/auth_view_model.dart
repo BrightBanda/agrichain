@@ -94,6 +94,25 @@ class AuthViewModel extends AsyncNotifier<AuthState> {
     return !result.hasError;
   }
 
+  /// Registers a service provider and signs them straight in.
+  Future<bool> registerServiceProvider(
+    ServiceProviderRegisterRequest request,
+  ) async {
+    state = const AsyncValue.loading();
+    final result = await AsyncValue.guard<AuthState>(() async {
+      await _repository.registerServiceProvider(request);
+      final session = await _repository.login(
+        LoginRequest(
+          phoneNumber: request.phoneNumber,
+          password: request.password,
+        ),
+      );
+      return _persist(session);
+    });
+    state = result;
+    return !result.hasError;
+  }
+
   Future<void> signOut() async {
     await _storage.clear();
     state = const AsyncValue.data(Unauthenticated());

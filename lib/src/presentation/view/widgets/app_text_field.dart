@@ -9,7 +9,11 @@ class AppTextField extends StatelessWidget {
   final String? hint;
   final IconData? icon;
   final bool obscureText;
-  final TextInputType keyboardType;
+
+  /// Leave null to let the field choose: multiline when [maxLines] > 1,
+  /// otherwise plain text. Flutter asserts that a newline input action requires
+  /// TextInputType.multiline, so the two must be decided together.
+  final TextInputType? keyboardType;
   final int maxLines;
   final String? Function(String?)? validator;
   final void Function(String)? onFieldSubmitted;
@@ -21,7 +25,7 @@ class AppTextField extends StatelessWidget {
     this.hint,
     this.icon,
     this.obscureText = false,
-    this.keyboardType = TextInputType.text,
+    this.keyboardType,
     this.maxLines = 1,
     this.validator,
     this.onFieldSubmitted,
@@ -29,16 +33,20 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMultiline = maxLines > 1;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
-        keyboardType: keyboardType,
+        keyboardType:
+            keyboardType ??
+            (isMultiline ? TextInputType.multiline : TextInputType.text),
         maxLines: maxLines,
         validator: validator,
         onFieldSubmitted: onFieldSubmitted,
-        textInputAction: maxLines > 1
+        textInputAction: isMultiline
             ? TextInputAction.newline
             : TextInputAction.next,
         decoration: InputDecoration(
@@ -74,7 +82,10 @@ class AppTextField extends StatelessWidget {
 /// A dropdown that matches [AppTextField]'s styling.
 class AppDropdownField<T> extends StatelessWidget {
   final String label;
-  final T value;
+
+  /// Nullable so a caller can render the field before a choice exists, e.g.
+  /// while the allowed options are still being resolved.
+  final T? value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?> onChanged;
   final IconData? icon;

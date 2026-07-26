@@ -4,6 +4,7 @@ class ApiEndpoints {
 
   // Authentication
   static const String registerFarmer = '/auth/register/farmer';
+  static const String registerOrganization = '/auth/register/organization';
   static const String login = '/auth/login';
   static const String users = '/auth/users';
 
@@ -16,6 +17,7 @@ class ApiEndpoints {
   // Lending
   static const String loanProducts = '/loan-products';
   static const String myLoans = '/loans/mine';
+  static const String applyForLoan = '/loans/apply';
   static String loanRepayments(String loanId) => '/loans/$loanId/repayments';
 
   // Credit engine

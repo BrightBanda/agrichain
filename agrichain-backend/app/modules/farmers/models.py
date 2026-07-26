@@ -61,6 +61,9 @@ class User(Base):
     farmer_profile: Mapped[Optional["Farmer"]] = relationship(
         "Farmer", back_populates="user", uselist=False
     )
+    supplier_profile: Mapped[Optional["SupplierProfile"]] = relationship(  # noqa: F821
+        "SupplierProfile", back_populates="user", uselist=False
+    )
 
 
 class Farmer(Base):
