@@ -18,6 +18,7 @@ them from the app.
 """
 
 import asyncio
+import os
 import sys
 
 import asyncpg
@@ -25,7 +26,11 @@ import httpx
 
 from app.core.config import settings
 
-BASE = "http://127.0.0.1:8000/api/v1"
+# Where to seed. Defaults to a local server; point it at a deployment with:
+#   AGRICHAIN_API=https://agrichain-api.onrender.com python seed_demo.py
+# The database URL must match that API's database, so override DATABASE_URL too.
+HOST = os.environ.get("AGRICHAIN_API", "http://127.0.0.1:8000").rstrip("/")
+BASE = f"{HOST}/api/v1"
 # Credentials come from .env; nothing sensitive is hardcoded in this file.
 DB = settings.sync_database_url
 PASSWORD = settings.DEMO_ACCOUNT_PASSWORD
@@ -67,10 +72,13 @@ def _auth(token: str) -> dict:
 
 async def seed() -> None:
     async with httpx.AsyncClient(timeout=60) as client:
+        print(f"seeding {HOST}")
         try:
-            await client.get("http://127.0.0.1:8000/health")
-        except httpx.ConnectError:
-            sys.exit("The backend is not running on http://127.0.0.1:8000.")
+            # A cold-started free instance can take a while to answer the first
+            # request, so this waits rather than failing immediately.
+            await client.get(f"{HOST}/health", timeout=90)
+        except httpx.HTTPError as error:
+            sys.exit(f"Cannot reach {HOST}: {error}")
 
         print("1/7  registering accounts")
         farmer = await client.post(
