@@ -6,6 +6,9 @@ import 'json_utils.dart';
 class User {
   final String id;
   final String phoneNumber;
+
+  /// Organisation name. Null for farmers, who carry a name on their profile.
+  final String? organizationName;
   final UserRole role;
   final bool isVerified;
   final DateTime? createdAt;
@@ -16,6 +19,7 @@ class User {
     required this.phoneNumber,
     required this.role,
     required this.isVerified,
+    this.organizationName,
     this.createdAt,
     this.farmerProfile,
   });
@@ -25,6 +29,7 @@ class User {
     return User(
       id: json['id'] as String? ?? '',
       phoneNumber: json['phone_number'] as String? ?? '',
+      organizationName: json['display_name'] as String?,
       role: UserRole.fromJson(json['role'] as String?),
       isVerified: json['is_verified'] as bool? ?? false,
       createdAt: asDateTime(json['created_at']),
@@ -37,12 +42,14 @@ class User {
   Map<String, dynamic> toJson() => {
     'id': id,
     'phone_number': phoneNumber,
+    'display_name': organizationName,
     'role': role.wireValue,
     'is_verified': isVerified,
     'created_at': createdAt?.toIso8601String(),
     'farmer_profile': farmerProfile?.toJson(),
   };
 
-  /// Falls back to the phone number for roles that have no profile yet.
-  String get displayName => farmerProfile?.fullName ?? phoneNumber;
+  /// A farmer's own name, an organisation's name, or the phone number.
+  String get displayName =>
+      farmerProfile?.fullName ?? organizationName ?? phoneNumber;
 }

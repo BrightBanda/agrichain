@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.modules.blockchain import canonical, service as ledger
+from app.modules.blockchain.events import LedgerEntity, LedgerEvent
 from app.modules.farmers.models import User
 from app.modules.products.models import Product
 from app.modules.products.schemas import (
@@ -37,6 +39,24 @@ async def create_product(
         description=payload.description,
     )
     db.add(new_product)
+    await db.flush()
+
+    # A produce listing is market activity the credit engine counts, so it is
+    # anchored (FR-23) and the listing and its block commit together.
+    await ledger.append_event(
+        db,
+        event_type=LedgerEvent.PRODUCE_LISTED,
+        entity_type=LedgerEntity.PRODUCT,
+        entity_id=new_product.id,
+        payload=canonical.product_payload(new_product),
+        summary={
+            "product_name": new_product.product_name,
+            "product_type": new_product.product_type.value,
+            "district": new_product.district,
+            "quantity_available": new_product.quantity_available,
+        },
+    )
+
     await db.commit()
     await db.refresh(new_product)
     return new_product

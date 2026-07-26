@@ -3,6 +3,7 @@ import 'package:agri/src/presentation/view/auth_gate.dart';
 import 'package:agri/src/presentation/view/AccountSelectionPage.dart';
 import 'package:agri/src/presentation/view/SecurityPasswordPage.dart';
 import 'package:agri/src/presentation/view/landing_page.dart';
+import 'package:agri/src/presentation/view/login_page.dart';
 import 'package:agri/src/presentation/view/sign_in_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,7 +30,7 @@ class MyApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: AppColors.background,
       ),
-      home: const SecurityPasswordPage (),
+      home: const LoginPage(),
     );
   }
 }

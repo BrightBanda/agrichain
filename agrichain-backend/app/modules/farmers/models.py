@@ -44,6 +44,9 @@ class User(Base):
     email: Mapped[Optional[str]] = mapped_column(
         String(255), unique=True, nullable=True
     )
+    # Organisation name for non-farmer accounts. Farmers carry their name on the
+    # Farmer profile instead, so this stays null for them.
+    display_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(
         SQLEnum(UserRole), nullable=False, default=UserRole.FARMER

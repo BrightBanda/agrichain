@@ -5,9 +5,12 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token
+from app.modules.blockchain import canonical, service as ledger
+from app.modules.blockchain.events import LedgerEntity, LedgerEvent
 from app.modules.farmers.models import User, Farmer, UserRole
 from app.modules.auth.schemas import (
     FarmerRegisterRequest,
+    OrganizationRegisterRequest,
     UserRegisterResponse,
     UserListResponse,
     LoginRequest,
@@ -71,6 +74,22 @@ async def register_farmer(
         id_back_photo_url=payload.id_back_photo_url,
     )
     db.add(farmer_profile)
+    await db.flush()  # Populates farmer_profile.id
+
+    # Anchor the KYC record so a lender can later confirm the identity details
+    # behind a lending score were never edited (FR-23). Only the hash goes on
+    # the ledger; the summary deliberately carries no personal data (NFR-02).
+    await ledger.append_event(
+        db,
+        event_type=LedgerEvent.FARMER_REGISTERED,
+        entity_type=LedgerEntity.FARMER,
+        entity_id=farmer_profile.id,
+        payload=canonical.farmer_payload(farmer_profile),
+        summary={
+            "district": farmer_profile.district,
+            "traditional_authority": farmer_profile.traditional_authority,
+        },
+    )
 
     await db.commit()
 
@@ -81,6 +100,43 @@ async def register_farmer(
         select(User)
         .options(selectinload(User.farmer_profile))
         .where(User.id == new_user.id)
+    )
+    return result.scalars().first()
+
+
+@router.post(
+    "/register/organization",
+    response_model=UserRegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_organization(
+    payload: OrganizationRegisterRequest, db: AsyncSession = Depends(get_db)
+):
+    """FR-01: registers an institution, supplier, buyer or cooperative."""
+    existing = await db.execute(
+        select(User).where(User.phone_number == payload.phone_number)
+    )
+    if existing.scalars().first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A user with this phone number is already registered.",
+        )
+
+    institution = User(
+        phone_number=payload.phone_number,
+        email=payload.email,
+        display_name=payload.display_name,
+        password_hash=hash_password(payload.password),
+        role=payload.role,
+        is_verified=False,
+    )
+    db.add(institution)
+    await db.commit()
+
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.farmer_profile))
+        .where(User.id == institution.id)
     )
     return result.scalars().first()
 
