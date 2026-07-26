@@ -1,5 +1,9 @@
 import 'package:agri/src/core/theme/app_colors.dart';
 import 'package:agri/src/presentation/view/auth_gate.dart';
+import 'package:agri/src/presentation/view/AccountSelectionPage.dart';
+import 'package:agri/src/presentation/view/SecurityPasswordPage.dart';
+import 'package:agri/src/presentation/view/landing_page.dart';
+import 'package:agri/src/presentation/view/sign_in_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,8 +29,7 @@ class MyApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: AppColors.background,
       ),
-      // Routes to the marketplace or the sign-up flow based on the stored session.
-      home: const AuthGate(),
+      home: const SecurityPasswordPage (),
     );
   }
 }

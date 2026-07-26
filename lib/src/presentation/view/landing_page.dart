@@ -74,7 +74,7 @@ class LandingPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               SecondaryButton(
-                label: "Sign In",
+                label: "sign in",
                 onPressed: () {
                   // Logic handled later
                 },
