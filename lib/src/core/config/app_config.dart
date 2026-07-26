@@ -23,11 +23,19 @@ class AppConfig {
 
   static const String _override = String.fromEnvironment('API_BASE_URL');
 
-  /// The deployed backend. Override at build time when the host changes rather
-  /// than editing this file.
+  /// The deployed backend.
+  ///
+  /// Note the `-l8op` suffix: onrender.com subdomains are globally unique, so
+  /// Render appends one when a service name is already taken. `agrichain-api`
+  /// without the suffix belongs to somebody else entirely — pointing at it sends
+  /// sign-up and login requests to a stranger's server.
+  ///
+  /// Mobile builds cannot read render.yaml, so this constant is the mobile
+  /// default. Override per build with:
+  ///   flutter build apk --release --dart-define=API_HOST=https://other.host
   static const String hostedApiHost = String.fromEnvironment(
     'API_HOST',
-    defaultValue: 'https://agrichain-api.onrender.com',
+    defaultValue: 'https://agrichain-api-l8op.onrender.com',
   );
 
   /// Base URL of the FastAPI backend, including the `/api/v1` prefix.

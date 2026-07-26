@@ -43,6 +43,24 @@ app.add_middleware(
 app.include_router(api_v1_router, prefix=settings.API_V1_STR)
 
 
+@app.get("/", tags=["System Health"])
+async def root():
+    """Signposts the API.
+
+    Without this, opening the deployed API's base URL in a browser returns a
+    bare `{"detail":"Not Found"}`, which reads like a broken deployment when the
+    service is in fact healthy — every real route lives under /api/v1.
+    """
+    return {
+        "service": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "status": "running",
+        "docs": "/docs",
+        "health": "/health",
+        "api": settings.API_V1_STR,
+    }
+
+
 @app.get("/health", tags=["System Health"])
 async def health_check():
     return {

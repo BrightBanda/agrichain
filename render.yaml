@@ -44,35 +44,48 @@ services:
         value: false
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: 1440
-      # The deployed web app's origin, plus fixed localhost ports so a local
-      # web build can be pointed at this API during development:
-      #   flutter run -d chrome --web-port=8080 \
-      #     --dart-define=API_BASE_URL=https://agrichain-api.onrender.com/api/v1
-      # Drop the localhost entries for a real production deployment.
+      # Resolved from the web service itself rather than written by hand.
+      # onrender.com subdomains are globally unique, so a taken name gets a
+      # random suffix (agrichain-web-ntyc). A hardcoded origin is then wrong and
+      # the browser blocks every API call.
+      - key: WEB_APP_HOST
+        fromService:
+          name: agrichain-web
+          type: web
+          property: host
+      # Extra origins for local development. WEB_APP_HOST is added by the
+      # backend, which prefixes a bare hostname with https://.
       # Mobile builds are unaffected: native apps send no Origin header, so CORS
       # never applies to them.
       - key: BACKEND_CORS_ORIGINS
-        value: https://agrichain-web.onrender.com,http://localhost:8080,http://127.0.0.1:8080
+        value: http://localhost:8080,http://127.0.0.1:8080
 
   # --- Flutter web app --------------------------------------------------------
   - type: web
     name: agrichain-web
     runtime: static
+    envVars:
+      # The API's real hostname, suffix and all, injected by Render at build
+      # time. Hardcoding it breaks the moment a service name collides and Render
+      # appends a suffix.
+      - key: API_HOST
+        fromService:
+          name: agrichain-api
+          type: web
+          property: host
     # Flutter is not preinstalled on Render, so the SDK is fetched at build time.
     # --depth 1 keeps the clone small; the build takes a few minutes.
     #
-    # API_BASE_URL is passed explicitly here. Release builds already default to
-    # AppConfig.hostedApiHost, but stating it keeps this file the single place to
-    # look when the API hostname changes for the *web* app. Mobile release builds
-    # take the default, so update AppConfig.hostedApiHost (or pass
-    # --dart-define=API_HOST=...) if you rename the API service.
+    # Mobile release builds do NOT read this file: they fall back to
+    # AppConfig.hostedApiHost, so that constant must be updated separately (or
+    # passed as --dart-define=API_HOST=...) for an APK to reach the API.
     buildCommand: >-
       git clone --depth 1 -b stable https://github.com/flutter/flutter.git
       "$HOME/flutter" &&
       export PATH="$HOME/flutter/bin:$PATH" &&
       flutter --version &&
       flutter build web --release
-      --dart-define=API_BASE_URL=https://agrichain-api.onrender.com/api/v1
+      --dart-define=API_BASE_URL=https://$API_HOST/api/v1
     staticPublishPath: build/web
     routes:
       # Flutter web is a single-page app: every path must serve index.html or a

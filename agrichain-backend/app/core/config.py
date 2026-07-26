@@ -69,6 +69,10 @@ class Settings(BaseSettings):
     # Comma-separated origins, or "*" for any.
     BACKEND_CORS_ORIGINS: str = "*"
 
+    # The deployed web app's hostname, injected by the host platform so it does
+    # not have to be hardcoded. Added to the allowed origins.
+    WEB_APP_HOST: str = ""
+
     # Password used by seed_demo.py for the accounts it creates.
     DEMO_ACCOUNT_PASSWORD: str = "Password123!"
 
@@ -100,11 +104,31 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        """BACKEND_CORS_ORIGINS parsed into the list CORSMiddleware expects."""
+        """The allowed origins, as CORSMiddleware expects them.
+
+        Combines BACKEND_CORS_ORIGINS with WEB_APP_HOST. A bare hostname is
+        given an https:// scheme, because platforms inject hostnames without
+        one and an origin without a scheme never matches.
+        """
         raw = self.BACKEND_CORS_ORIGINS.strip()
-        if raw in ("", "*"):
+        if raw == "*":
             return ["*"]
-        return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+        def as_origin(value: str) -> str:
+            value = value.strip().rstrip("/")
+            if not value or "://" in value:
+                return value
+            return f"https://{value}"
+
+        origins = [as_origin(part) for part in raw.split(",")]
+        origins.append(as_origin(self.WEB_APP_HOST))
+
+        # Preserve order while dropping blanks and duplicates.
+        seen: list[str] = []
+        for origin in origins:
+            if origin and origin not in seen:
+                seen.append(origin)
+        return seen or ["*"]
 
     @property
     def sync_database_url(self) -> str:
