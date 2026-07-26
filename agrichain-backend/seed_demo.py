@@ -3,10 +3,12 @@
 Walks the whole value proposition against a running server:
 
     farmer registered -> harvest recorded -> harvest verified
-    -> produce listed -> loan approved -> repayment -> score updated
+    -> produce listed -> loan approved -> repaid in full -> score updated
+    -> second loan approved -> part paid
 
 Every step anchors a block, so afterwards the app's Ledger Explorer has a
-complete chain to show.
+complete chain to show, and the home screen has both a completed loan and a
+live one with a balance outstanding.
 
     python seed_demo.py           # create the demo data
     python seed_demo.py --clean   # remove it again
@@ -33,6 +35,7 @@ DEMO_PHONES = [FARMER_PHONE, COOP_PHONE, BANK_PHONE]
 DEMO_NATIONAL_ID = "DEMO00000001"
 DEMO_PRODUCT_NAME = "Demo Dry White Maize"
 DEMO_REFERENCE = "DEMO-MM-000001"
+DEMO_REFERENCE_PARTIAL = "DEMO-MM-000002"
 
 
 async def _login(client: httpx.AsyncClient, phone: str) -> str:
@@ -187,6 +190,41 @@ async def seed() -> None:
         response.raise_for_status()
         result = response.json()
 
+        # A second loan, left part-paid, so the home screen has a live active
+        # loan to show alongside the completed one.
+        print("8/9  taking a second loan for the current season")
+        response = await client.post(
+            f"{BASE}/loans/apply",
+            headers=_auth(farmer_token),
+            json={"loan_product_id": loan_product_id, "amount_requested": 200000},
+        )
+        response.raise_for_status()
+        second_loan_id = response.json()["id"]
+
+        response = await client.post(
+            f"{BASE}/loans/{second_loan_id}/decision",
+            headers=_auth(bank_token),
+            json={
+                "approve": True,
+                "amount_approved": 200000,
+                "note": "Approved on improved score after full repayment.",
+            },
+        )
+        response.raise_for_status()
+
+        print("9/9  making a part payment on it")
+        response = await client.post(
+            f"{BASE}/loans/{second_loan_id}/repayments",
+            headers=_auth(farmer_token),
+            json={
+                "amount": 52000,
+                "method": "MOBILE_MONEY",
+                "transaction_reference": DEMO_REFERENCE_PARTIAL,
+            },
+        )
+        response.raise_for_status()
+        result = response.json()
+
         stats = (await client.get(f"{BASE}/blockchain/chain/stats")).json()
         integrity = (await client.get(f"{BASE}/blockchain/verify")).json()
 
@@ -194,6 +232,7 @@ async def seed() -> None:
         print(f"  lending score : {result['lending_score']}")
         for reason in result["score_reasons"]:
             print(f"     - {reason}")
+        print(f"  still owed    : MWK {result['loan']['outstanding_balance']}")
         print(f"  ledger blocks : {stats['block_count']}")
         print(f"  chain valid   : {integrity['valid']}")
         print(f"  events        : {stats['events']}")
@@ -201,39 +240,57 @@ async def seed() -> None:
 
 
 async def clean() -> None:
+    """Remove the demo rows, leaving the ledger untouched.
+
+    The blocks are deliberately kept. A hash chain cannot have history removed
+    without invalidating every block that follows, and deleting from the middle
+    would break the chain permanently. Leaving them is also the truthful
+    behaviour: `verify-record` then reports "anchored, but the record has been
+    deleted", which is exactly what happened.
+
+    Use --reset-ledger when you want a genuinely empty chain.
+    """
     conn = await asyncpg.connect(DB)
     try:
-        # Blocks are append-only in normal operation, so the demo's blocks are
-        # removed explicitly along with the rows they attest to.
-        await conn.execute(
-            """
-            DELETE FROM ledger_blocks WHERE entity_id IN (
-                SELECT id FROM farmers WHERE national_id_number = $2
-                UNION SELECT id FROM products WHERE product_name = $3
-                UNION SELECT h.id FROM harvests h JOIN users u ON u.id = h.user_id
-                       WHERE u.phone_number = ANY($1::text[])
-                UNION SELECT l.id FROM loans l JOIN users u ON u.id = l.farmer_user_id
-                       WHERE u.phone_number = ANY($1::text[])
-                UNION SELECT r.id FROM repayments r JOIN loans l ON l.id = r.loan_id
-                       JOIN users u ON u.id = l.farmer_user_id
-                       WHERE u.phone_number = ANY($1::text[])
-                UNION SELECT id FROM users WHERE phone_number = ANY($1::text[])
-            )
-            """,
-            DEMO_PHONES,
-            DEMO_NATIONAL_ID,
-            DEMO_PRODUCT_NAME,
-        )
-        # Everything else cascades from the user rows.
+        # Harvests, loans, repayments and the farmer profile all cascade from
+        # the user rows.
         result = await conn.execute(
             "DELETE FROM users WHERE phone_number = ANY($1::text[])", DEMO_PHONES
         )
+        await conn.execute(
+            "DELETE FROM products WHERE product_name = $1", DEMO_PRODUCT_NAME
+        )
         remaining = await conn.fetchval("SELECT count(*) FROM ledger_blocks")
         print(f"removed demo accounts ({result})")
-        print(f"ledger blocks remaining: {remaining}")
+        print(f"ledger blocks kept: {remaining} (the chain stays valid)")
+        print(
+            "  Their blocks now attest to deleted records, which verify-record\n"
+            "  reports honestly. Run --reset-ledger for an empty chain."
+        )
+    finally:
+        await conn.close()
+
+
+async def reset_ledger() -> None:
+    """Wipe the whole chain. Genesis is recreated on the next ledger read.
+
+    Destructive and development-only: every anchored attestation is lost, so any
+    record previously anchored becomes unverifiable.
+    """
+    conn = await asyncpg.connect(DB)
+    try:
+        before = await conn.fetchval("SELECT count(*) FROM ledger_blocks")
+        await conn.execute("DELETE FROM ledger_blocks")
+        print(f"deleted {before} block(s); the chain is now empty")
+        print("  A fresh genesis block is mined on the next ledger request.")
     finally:
         await conn.close()
 
 
 if __name__ == "__main__":
-    asyncio.run(clean() if "--clean" in sys.argv else seed())
+    if "--reset-ledger" in sys.argv:
+        asyncio.run(reset_ledger())
+    elif "--clean" in sys.argv:
+        asyncio.run(clean())
+    else:
+        asyncio.run(seed())

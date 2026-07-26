@@ -10,6 +10,18 @@ class ApiEndpoints {
   // Products
   static const String products = '/products';
 
+  // Harvests
+  static const String harvests = '/harvests';
+
+  // Lending
+  static const String loanProducts = '/loan-products';
+  static const String myLoans = '/loans/mine';
+  static String loanRepayments(String loanId) => '/loans/$loanId/repayments';
+
+  // Credit engine
+  static const String lendingScore = '/lending-score';
+  static const String lendingScoreHistory = '/lending-score/history';
+
   // Blockchain ledger
   static const String chain = '/blockchain/chain';
   static const String chainStats = '/blockchain/chain/stats';

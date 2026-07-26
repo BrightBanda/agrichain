@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: AppColors.background,
       ),
-      home: const LoginPage(),
+      home: const AuthGate(),
     );
   }
 }
