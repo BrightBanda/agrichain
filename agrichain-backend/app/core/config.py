@@ -61,10 +61,6 @@ class Settings(BaseSettings):
     # Database Configuration
     DATABASE_URL: str
 
-    # The same database with the sync driver, for the standalone maintenance
-    # scripts that use asyncpg directly. Derived from DATABASE_URL when unset.
-    DATABASE_URL_SYNC: str = ""
-
     # JWT Authentication Settings
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
@@ -76,7 +72,9 @@ class Settings(BaseSettings):
     # Password used by seed_demo.py for the accounts it creates.
     DEMO_ACCOUNT_PASSWORD: str = "Password123!"
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=True, extra="ignore"
+    )
 
     @field_validator("DATABASE_URL")
     @classmethod
@@ -110,9 +108,13 @@ class Settings(BaseSettings):
 
     @property
     def sync_database_url(self) -> str:
-        """The database URL with the async driver stripped, for asyncpg scripts."""
-        if self.DATABASE_URL_SYNC:
-            return self.DATABASE_URL_SYNC
+        """The same database, with the async driver stripped for asyncpg scripts.
+
+        Always derived from DATABASE_URL rather than configured separately. A
+        second setting would let the two drift: overriding DATABASE_URL to point
+        at a deployed database while a stale sync URL still pointed at localhost
+        would send writes to one database and deletes to another.
+        """
         return self.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://", 1)
 
 
