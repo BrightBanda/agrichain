@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:agri/src/presentation/view/AccountSelectionPage.dart';
+import 'package:agri/src/presentation/view/landing_page.dart';
 import 'package:agri/src/presentation/view/auth_gate.dart';
 import 'package:agri/src/presentation/viewmodel/auth_view_model.dart';
 import 'package:flutter/material.dart';
@@ -27,14 +27,15 @@ Future<void> _pumpGate(WidgetTester tester, AuthViewModel Function() auth) async
 }
 
 void main() {
-  testWidgets('signed-out users land on the account selection screen', (
-    tester,
-  ) async {
+  testWidgets('signed-out users land on the landing screen', (tester) async {
     await _pumpGate(tester, _SignedOutAuthViewModel.new);
 
-    expect(find.byType(AccountSelectionPage), findsOneWidget);
-    expect(find.text('Who are you?'), findsOneWidget);
-    expect(find.text('Sign In To Your Account'), findsOneWidget);
+    // The landing page is the entry point; choosing "Create Account" is what
+    // leads on to the farmer / service-provider choice.
+    expect(find.byType(LandingPage), findsOneWidget);
+    expect(find.text('Create Account'), findsOneWidget);
+    expect(find.text('Sign In'), findsOneWidget);
+    expect(find.text('National Bank Admin Access'), findsOneWidget);
   });
 
   testWidgets('a splash screen shows while the session is being restored', (
@@ -53,7 +54,7 @@ void main() {
 
     expect(find.text('AgriChain'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.byType(AccountSelectionPage), findsNothing);
+    expect(find.byType(LandingPage), findsNothing);
   });
 }
 

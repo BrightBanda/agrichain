@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../viewmodel/auth_view_model.dart';
-import 'AccountSelectionPage.dart';
+import '../../data/models/enums.dart';
 import 'farmer_shell_page.dart';
+import 'institution_portal_page.dart';
+import 'landing_page.dart';
 import 'service_provider_home_page.dart';
 
 /// Chooses the root screen from the restored session.
@@ -24,11 +26,17 @@ class AuthGate extends ConsumerWidget {
     }
 
     final auth = authState.value;
-    if (auth is! Authenticated) return const AccountSelectionPage();
+    // Signed out: the landing page offers create-account, sign-in and the bank
+    // admin route.
+    if (auth is! Authenticated) return const LandingPage();
 
-    // Each role gets its own home. A service provider only lists inputs, so the
-    // farmer shell's score, loans and harvest tabs would be meaningless to it.
+    // Each role gets its own home. A service provider only lists inputs and an
+    // institution only verifies loans, so the farmer shell's score, harvest and
+    // analytics tabs would be meaningless to either.
     if (auth.user.isServiceProvider) return const ServiceProviderHomePage();
+    if (auth.user.role == UserRole.financialInstitution) {
+      return const InstitutionPortalPage();
+    }
     return const FarmerShellPage();
   }
 }

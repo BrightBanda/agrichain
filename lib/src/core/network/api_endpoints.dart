@@ -18,6 +18,8 @@ class ApiEndpoints {
   static const String loanProducts = '/loan-products';
   static const String myLoans = '/loans/mine';
   static const String applyForLoan = '/loans/apply';
+  static const String loanApplications = '/loans/applications';
+  static String loanDecision(String loanId) => '/loans/$loanId/decision';
   static String loanRepayments(String loanId) => '/loans/$loanId/repayments';
 
   // Credit engine

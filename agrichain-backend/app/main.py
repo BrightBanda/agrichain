@@ -6,14 +6,9 @@ from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.v1.router import api_v1_router
 
-# Imported for their side effect: registering the tables on Base.metadata.
-import app.modules.activities.models
-import app.modules.blockchain.models
-import app.modules.credit_engine.models
-import app.modules.farmers.models
-import app.modules.loans.models
-import app.modules.products.models
-import app.modules.suppliers.models
+# Registers every ORM model on Base.metadata and completes the mapper
+# registry, so relationships declared by class name can resolve.
+from app import models  # noqa: F401
 
 
 @asynccontextmanager

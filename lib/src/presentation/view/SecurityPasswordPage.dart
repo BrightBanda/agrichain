@@ -2,16 +2,11 @@ import 'package:agri/src/utils/app_colors.dart';
 import 'package:agri/src/utils/auth_header_card.dart';
 import 'package:agri/src/utils/verified_phone_card.dart';
 import 'package:flutter/material.dart';
-import 'auth_header_card.dart';
-import 'verified_phone_card.dart';
 
 class SecurityPasswordPage extends StatefulWidget {
   final String phoneNumber;
 
-  const SecurityPasswordPage({
-    super.key,
-    this.phoneNumber = '',
-  });
+  const SecurityPasswordPage({super.key, this.phoneNumber = ''});
 
   @override
   State<SecurityPasswordPage> createState() => _SecurityPasswordPageState();
@@ -62,7 +57,10 @@ class _SecurityPasswordPageState extends State<SecurityPasswordPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -70,14 +68,21 @@ class _SecurityPasswordPageState extends State<SecurityPasswordPage> {
 
                   // AgriChain Auth Badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primaryGreen,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       children: const [
-                        Icon(Icons.eco_outlined, size: 14, color: AppColors.accentGreen),
+                        Icon(
+                          Icons.eco_outlined,
+                          size: 14,
+                          color: AppColors.accentGreen,
+                        ),
                         SizedBox(width: 4),
                         Text(
                           'AgriChain Auth',
@@ -113,7 +118,7 @@ class _SecurityPasswordPageState extends State<SecurityPasswordPage> {
                       color: Colors.black.withOpacity(0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: Column(
@@ -191,14 +196,20 @@ class _SecurityPasswordPageState extends State<SecurityPasswordPage> {
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF9FBFB),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.borderLight),
+                          borderSide: const BorderSide(
+                            color: AppColors.borderLight,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.borderLight),
+                          borderSide: const BorderSide(
+                            color: AppColors.borderLight,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),

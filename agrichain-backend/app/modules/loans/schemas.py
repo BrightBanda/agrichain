@@ -76,6 +76,9 @@ class LoanResponse(BaseModel):
     decided_at: Optional[datetime]
     repayment_period_months: Optional[int] = None
     due_date: Optional[datetime] = None
+    # Denormalised so a reviewing institution sees a person, not a UUID.
+    farmer_name: Optional[str] = None
+    farmer_phone: Optional[str] = None
 
     class Config:
         from_attributes = True

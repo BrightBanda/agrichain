@@ -115,14 +115,21 @@ class RoleCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  actionText,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: tagTextColor,
+                // Expanded so a long action label ellipsizes rather than
+                // pushing the arrow off the card.
+                Expanded(
+                  child: Text(
+                    actionText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: tagTextColor,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 6),
                 Icon(Icons.arrow_forward, size: 16, color: tagTextColor),
               ],
             ),

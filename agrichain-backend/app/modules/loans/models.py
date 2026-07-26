@@ -144,6 +144,27 @@ class Loan(Base):
     decided_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     product: Mapped["LoanProduct"] = relationship("LoanProduct")
+    # foreign_keys is spelled out because Loan has two FKs to users.
+    farmer: Mapped["User"] = relationship(  # noqa: F821
+        "User", foreign_keys="Loan.farmer_user_id"
+    )
+
+    @property
+    def farmer_name(self) -> Optional[str]:
+        """Who applied, for the institution reviewing the application.
+
+        Reads through two relationships, so any query returning a loan to a
+        client must eager-load them or Pydantic will trip MissingGreenlet.
+        """
+        if self.farmer is None:
+            return None
+        if self.farmer.farmer_profile is not None:
+            return self.farmer.farmer_profile.full_name
+        return self.farmer.display_name
+
+    @property
+    def farmer_phone(self) -> Optional[str]:
+        return self.farmer.phone_number if self.farmer else None
 
     @property
     def outstanding_balance(self) -> decimal.Decimal:

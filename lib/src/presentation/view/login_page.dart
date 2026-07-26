@@ -10,7 +10,15 @@ import 'widgets/submit_button.dart';
 
 /// `POST /auth/login` — phone number and password.
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+  /// Heading shown in the app bar. The staff route relabels it; the credentials
+  /// flow is identical, because the account's role decides what appears after
+  /// sign-in.
+  final String title;
+
+  /// Replaces the default explanatory line under the greeting.
+  final String? subtitle;
+
+  const LoginPage({super.key, this.title = 'Sign In', this.subtitle});
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -70,9 +78,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
         foregroundColor: AppColors.textHeading,
-        title: const Text(
-          'Sign In',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        centerTitle: true,
+        title: Text(
+          widget.title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
       ),
       body: SafeArea(
@@ -92,9 +101,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Sign in with the phone number you registered with.',
-                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                Text(
+                  widget.subtitle ??
+                      'Sign in with the phone number you registered with.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 24),
 

@@ -25,7 +25,11 @@ class AccountSelectionPage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  // Flexible so the brand ellipsizes instead of pushing the
+                  // language chip off a narrow screen.
+                  Flexible(
+                    child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       CircleAvatar(
                         radius: 16,
@@ -40,15 +44,21 @@ class AccountSelectionPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
-                        'AgriChain Malawi',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F2419),
+                      const Flexible(
+                        child: Text(
+                          'AgriChain Malawi',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F2419),
+                          ),
                         ),
                       ),
                     ],
+                  ),
                   ),
                   // Language Dropdown Chip
                   Container(

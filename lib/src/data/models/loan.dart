@@ -36,6 +36,10 @@ class Loan {
   final int? repaymentPeriodMonths;
   final DateTime? dueDate;
 
+  /// Joined by the API so a reviewing institution sees a person, not a UUID.
+  final String? farmerName;
+  final String? farmerPhone;
+
   const Loan({
     required this.id,
     required this.loanProductId,
@@ -52,6 +56,8 @@ class Loan {
     this.decidedAt,
     this.repaymentPeriodMonths,
     this.dueDate,
+    this.farmerName,
+    this.farmerPhone,
   });
 
   factory Loan.fromJson(Map<String, dynamic> json) {
@@ -80,10 +86,18 @@ class Loan {
           ? null
           : asInt(json['repayment_period_months']),
       dueDate: asDateTime(json['due_date']),
+      farmerName: json['farmer_name'] as String?,
+      farmerPhone: json['farmer_phone'] as String?,
     );
   }
 
   bool get isActive => status == LoanStatus.active;
+
+  bool get isPending => status == LoanStatus.pending;
+
+  /// What the institution would commit to if it approved as requested.
+  double get projectedTotalPayable =>
+      amountRequested + amountRequested * interestRate / 100;
 
   /// 0.0 – 1.0 of the total repaid so far.
   double get repaymentProgress {

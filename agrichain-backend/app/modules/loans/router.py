@@ -41,7 +41,8 @@ async def _load_loan(db: AsyncSession, loan_id: uuid.UUID) -> Optional[Loan]:
     through here.
     """
     result = await db.execute(
-        select(Loan).options(selectinload(Loan.product)).where(Loan.id == loan_id)
+        select(Loan).options(selectinload(Loan.product),
+            selectinload(Loan.farmer).selectinload(User.farmer_profile)).where(Loan.id == loan_id)
     )
     return result.scalars().first()
 
@@ -172,7 +173,8 @@ async def list_my_loans(
 ):
     result = await db.execute(
         select(Loan)
-        .options(selectinload(Loan.product))
+        .options(selectinload(Loan.product),
+            selectinload(Loan.farmer).selectinload(User.farmer_profile))
         .where(Loan.farmer_user_id == current_user.id)
         .order_by(Loan.applied_at.desc())
     )
@@ -188,7 +190,8 @@ async def list_applications(
     """Applications submitted against this institution's products (FR-17)."""
     result = await db.execute(
         select(Loan)
-        .options(selectinload(Loan.product))
+        .options(selectinload(Loan.product),
+            selectinload(Loan.farmer).selectinload(User.farmer_profile))
         .where(Loan.institution_user_id == current_user.id)
         .order_by(Loan.applied_at.desc())
     )

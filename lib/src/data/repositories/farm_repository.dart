@@ -114,6 +114,47 @@ class FarmRepository {
     }
   }
 
+  /// `GET /loans/applications` — applications against this institution's
+  /// products. Requires the FINANCIAL_INSTITUTION role.
+  Future<List<Loan>> fetchApplications() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiEndpoints.loanApplications,
+      );
+      final items = response.data?['loans'] as List? ?? const [];
+      return items
+          .whereType<Map>()
+          .map((json) => Loan.fromJson(json.cast<String, dynamic>()))
+          .toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  /// `POST /loans/{id}/decision` — approve or decline (FR-18).
+  ///
+  /// An approval anchors the loan agreement to the ledger server-side.
+  Future<Loan> decideLoan({
+    required String loanId,
+    required bool approve,
+    double? amountApproved,
+    String? note,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiEndpoints.loanDecision(loanId),
+        data: {
+          'approve': approve,
+          if (amountApproved != null) 'amount_approved': amountApproved,
+          if (note != null && note.isNotEmpty) 'note': note,
+        },
+      );
+      return Loan.fromJson(response.data ?? const {});
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   /// `POST /loans/{id}/repayments`
   Future<void> repayLoan({
     required String loanId,

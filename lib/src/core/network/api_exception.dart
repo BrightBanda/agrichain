@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import '../config/app_config.dart';
+
 /// A transport-agnostic failure surfaced by the repository layer.
 ///
 /// View models never see a [DioException]; they see this, so the presentation
@@ -16,14 +18,23 @@ class ApiException implements Exception {
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
       case DioExceptionType.transformTimeout:
-        return const ApiException(
-          'The server took too long to respond. Please try again.',
+        // On free hosting the container sleeps when idle, so the first request
+        // after a quiet spell waits for a cold start. Saying "try again" is the
+        // right advice, because the second attempt usually lands quickly.
+        return ApiException(
+          AppConfig.usesHostedApi
+              ? 'The server is waking up. This can take up to a minute on the '
+                    'first request — please try again.'
+              : 'The server took too long to respond. Please try again.',
         );
       case DioExceptionType.connectionError:
       case DioExceptionType.unknown:
-        return const ApiException(
-          'Cannot reach the AgriChain server. Check your connection and '
-          'confirm the backend is running.',
+        return ApiException(
+          AppConfig.usesHostedApi
+              ? 'Cannot reach the AgriChain server. Check your internet '
+                    'connection and try again.'
+              : 'Cannot reach the AgriChain server. Check your connection and '
+                    'confirm the backend is running.',
         );
       case DioExceptionType.cancel:
         return const ApiException('The request was cancelled.');
