@@ -108,7 +108,7 @@ class OtpVerificationPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
-                              'MATERIAL 3 PLANT NETWORK',
+                              '',
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
