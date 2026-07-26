@@ -1,3 +1,4 @@
+import calendar
 import decimal
 import enum
 import uuid
@@ -127,6 +128,28 @@ class Loan(Base):
         if self.total_payable is None:
             return decimal.Decimal("0")
         return self.total_payable - self.amount_repaid
+
+    @property
+    def repayment_period_months(self) -> Optional[int]:
+        # Requires the product to be eager-loaded; a lazy load here would raise
+        # MissingGreenlet during response serialisation.
+        return self.product.repayment_period_months if self.product else None
+
+    @property
+    def due_date(self) -> Optional[datetime]:
+        """When the loan falls due: the decision date plus the product's term."""
+        if self.decided_at is None or self.repayment_period_months is None:
+            return None
+        return _add_months(self.decided_at, self.repayment_period_months)
+
+
+def _add_months(moment: datetime, months: int) -> datetime:
+    """Calendar-aware month arithmetic without pulling in dateutil."""
+    zero_based = moment.month - 1 + months
+    year = moment.year + zero_based // 12
+    month = zero_based % 12 + 1
+    day = min(moment.day, calendar.monthrange(year, month)[1])
+    return moment.replace(year=year, month=month, day=day)
 
 
 class Repayment(Base):

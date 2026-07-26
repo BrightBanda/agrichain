@@ -70,6 +70,8 @@ class LoanResponse(BaseModel):
     decision_note: Optional[str]
     applied_at: datetime
     decided_at: Optional[datetime]
+    repayment_period_months: Optional[int] = None
+    due_date: Optional[datetime] = None
 
     class Config:
         from_attributes = True

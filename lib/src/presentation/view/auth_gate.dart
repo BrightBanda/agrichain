@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../viewmodel/auth_view_model.dart';
 import 'AccountSelectionPage.dart';
-import 'homepage.dart';
+import 'farmer_shell_page.dart';
 
 /// Chooses the root screen from the restored session.
 ///
@@ -23,7 +23,7 @@ class AuthGate extends ConsumerWidget {
     }
 
     return authState.value is Authenticated
-        ? const Homepage()
+        ? const FarmerShellPage()
         : const AccountSelectionPage();
   }
 }

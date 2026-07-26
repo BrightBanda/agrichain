@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_roles
@@ -28,6 +30,20 @@ from app.modules.loans.schemas import (
 )
 
 router = APIRouter()
+
+
+async def _load_loan(db: AsyncSession, loan_id: uuid.UUID) -> Optional[Loan]:
+    """Load a loan with its product eager-loaded.
+
+    LoanResponse exposes due_date and repayment_period_months, which read
+    loan.product. Serialising a lazily-loaded relationship raises
+    MissingGreenlet under asyncio, so every loan returned to a client must come
+    through here.
+    """
+    result = await db.execute(
+        select(Loan).options(selectinload(Loan.product)).where(Loan.id == loan_id)
+    )
+    return result.scalars().first()
 
 
 # --------------------------------------------------------------------------
@@ -138,8 +154,7 @@ async def apply_for_loan(
     )
     db.add(loan)
     await db.commit()
-    await db.refresh(loan)
-    return loan
+    return await _load_loan(db, loan.id)
 
 
 @router.get("/loans/mine", response_model=LoanListResponse)
@@ -149,6 +164,7 @@ async def list_my_loans(
 ):
     result = await db.execute(
         select(Loan)
+        .options(selectinload(Loan.product))
         .where(Loan.farmer_user_id == current_user.id)
         .order_by(Loan.applied_at.desc())
     )
@@ -164,6 +180,7 @@ async def list_applications(
     """Applications submitted against this institution's products (FR-17)."""
     result = await db.execute(
         select(Loan)
+        .options(selectinload(Loan.product))
         .where(Loan.institution_user_id == current_user.id)
         .order_by(Loan.applied_at.desc())
     )
@@ -205,8 +222,7 @@ async def decide_loan(
         # A decline is part of the credit picture, so the score is refreshed.
         await credit_engine.recompute_score(db, loan.farmer_user_id)
         await db.commit()
-        await db.refresh(loan)
-        return loan
+        return await _load_loan(db, loan.id)
 
     approved = payload.amount_approved or loan.amount_requested
     if approved > loan.amount_requested:
@@ -238,8 +254,7 @@ async def decide_loan(
     )
 
     await db.commit()
-    await db.refresh(loan)
-    return loan
+    return await _load_loan(db, loan.id)
 
 
 # --------------------------------------------------------------------------
@@ -332,11 +347,10 @@ async def record_repayment(
 
     await db.commit()
     await db.refresh(repayment)
-    await db.refresh(loan)
 
     return RepaymentResultResponse(
         repayment=RepaymentResponse.model_validate(repayment),
-        loan=LoanResponse.model_validate(loan),
+        loan=LoanResponse.model_validate(await _load_loan(db, loan.id)),
         lending_score=score.score,
         score_reasons=score.reasons,
         block_index=block.index,
