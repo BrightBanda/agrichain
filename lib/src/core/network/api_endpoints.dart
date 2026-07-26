@@ -9,4 +9,18 @@ class ApiEndpoints {
 
   // Products
   static const String products = '/products';
+
+  // Blockchain ledger
+  static const String chain = '/blockchain/chain';
+  static const String chainStats = '/blockchain/chain/stats';
+  static const String chainVerify = '/blockchain/verify';
+  static const String verifyRecord = '/blockchain/verify-record';
+  static String blockAt(int index) => '/blockchain/blocks/$index';
+  static String recordBlocks(String entityType, String entityId) =>
+      '/blockchain/records/$entityType/$entityId';
+
+  // Demonstration only — the backend refuses these unless DEBUG is on.
+  static String demoTamperBlock(int index) =>
+      '/blockchain/demo/tamper-block/$index';
+  static const String demoTamperRecord = '/blockchain/demo/tamper-record';
 }

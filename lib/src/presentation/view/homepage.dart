@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/models/user.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/product_list_view_model.dart';
+import 'blockchain_explorer_page.dart';
 import 'product_form_page.dart';
 import 'widgets/product_card.dart';
 
@@ -42,6 +43,13 @@ class Homepage extends ConsumerWidget {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Ledger explorer',
+            icon: const Icon(Icons.link, color: AppColors.primaryMuted),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const BlockchainExplorerPage()),
+            ),
+          ),
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout, color: AppColors.primaryMuted),

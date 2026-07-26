@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: AppColors.background,
       ),
-      home: FarmHarvestPage(),
+      home: const LoginPage(),
     );
   }
 }
