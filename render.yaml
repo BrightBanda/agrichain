@@ -1,0 +1,70 @@
+# Render blueprint: database + FastAPI backend + Flutter web app.
+#
+# Deploy with: Render dashboard -> New -> Blueprint -> pick this repo.
+# Render reads this file and creates all three services together.
+#
+# The two service URLs reference each other (CORS one way, API base URL the
+# other), so the names below must match the hostnames Render derives from them:
+#   agrichain-api -> https://agrichain-api.onrender.com
+#   agrichain-web -> https://agrichain-web.onrender.com
+# If you rename a service, update both cross-references.
+
+databases:
+  - name: agrichain-db
+    databaseName: agrichain
+    user: agrichain
+    plan: free
+
+services:
+  # --- FastAPI backend --------------------------------------------------------
+  - type: web
+    name: agrichain-api
+    runtime: python
+    plan: free
+    rootDir: agrichain-backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    # Render injects $PORT and expects the process to bind 0.0.0.0.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # Pinned so a future default change on Render cannot break the build.
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      # Wired straight from the managed database; config.py rewrites the scheme
+      # to postgresql+asyncpg:// and strips libpq-only query parameters.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agrichain-db
+          property: connectionString
+      # Render generates this once and keeps it. Never commit a real key.
+      - key: SECRET_KEY
+        generateValue: true
+      # Must stay false: DEBUG gates the ledger tamper-demo endpoints.
+      - key: DEBUG
+        value: false
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440
+      # Restrict the API to the deployed web app's origin.
+      - key: BACKEND_CORS_ORIGINS
+        value: https://agrichain-web.onrender.com
+
+  # --- Flutter web app --------------------------------------------------------
+  - type: web
+    name: agrichain-web
+    runtime: static
+    # Flutter is not preinstalled on Render, so the SDK is fetched at build time.
+    # --depth 1 keeps the clone small; the build takes a few minutes.
+    buildCommand: >-
+      git clone --depth 1 -b stable https://github.com/flutter/flutter.git
+      "$HOME/flutter" &&
+      export PATH="$HOME/flutter/bin:$PATH" &&
+      flutter --version &&
+      flutter build web --release
+      --dart-define=API_BASE_URL=https://agrichain-api.onrender.com/api/v1
+    staticPublishPath: build/web
+    routes:
+      # Flutter web is a single-page app: every path must serve index.html or a
+      # refresh on a deep link returns 404.
+      - type: rewrite
+        source: /*
+        destination: /index.html

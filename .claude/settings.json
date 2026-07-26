@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "PowerShell(Set-Location \"f:\\\\Flutter Projects\\\\agri\\\\agrichain-backend\"; $env:PYTHONPATH=\"f:\\\\Flutter Projects\\\\agri\\\\agrichain-backend\"; & \".\\\\venv\\\\Scripts\\\\python.exe\" -c \"import app.main; print\\('IMPORT OK'\\)\" 2>&1 | Select-Object -Last 10; Write-Output \"--- alter enum ---\"; & \".\\\\venv\\\\Scripts\\\\python.exe\" \"C:\\\\Users\\\\nytem\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\f--Flutter-Projects-agri\\\\cafb69db-d032-42b0-a817-3e9b4d9a4e8d\\\\scratchpad\\\\add_supply_types.py\")",
-      "PowerShell($env:Path = \"C:\\\\Users\\\\nytem\\\\Documents\\\\flutterDev\\\\flutter\\\\bin;$env:Path\"; Set-Location \"f:\\\\Flutter Projects\\\\agri\"; flutter build web --no-wasm-dry-run 2>&1 | Select-Object -Last 2)"
+      "PowerShell($env:Path = \"C:\\\\Users\\\\nytem\\\\Documents\\\\flutterDev\\\\flutter\\\\bin;$env:Path\"; Set-Location \"f:\\\\Flutter Projects\\\\agri\"; flutter build web --no-wasm-dry-run 2>&1 | Select-Object -Last 2)",
+      "Bash(agrichain-backend/venv/Scripts/python.exe --version)"
     ]
   }
 }

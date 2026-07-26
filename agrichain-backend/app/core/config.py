@@ -1,5 +1,45 @@
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# libpq query parameters that asyncpg does not accept. SQLAlchemy forwards
+# unknown parameters straight to the driver, which then raises TypeError, so they
+# are stripped instead. asyncpg negotiates TLS on its own (ssl defaults to
+# "prefer"), which satisfies managed providers that require SSL.
+_LIBPQ_ONLY_PARAMS = frozenset(
+    {"sslmode", "channel_binding", "gssencmode", "target_session_attrs"}
+)
+
+
+def normalise_async_database_url(url: str) -> str:
+    """Turn any Postgres URL into one the asyncpg driver accepts.
+
+    Managed hosts (Render, Heroku, Railway) hand out `postgres://` or
+    `postgresql://` URLs, often with `?sslmode=require`. Pasting one of those
+    verbatim would fail at connect time, so it is rewritten here rather than
+    becoming a deployment mystery.
+    """
+    url = url.strip()
+    if not url:
+        return url
+
+    for prefix in ("postgresql+asyncpg://", "postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            if prefix != "postgresql+asyncpg://":
+                url = f"postgresql+asyncpg://{url[len(prefix):]}"
+            break
+
+    parts = urlsplit(url)
+    if parts.query:
+        kept = [
+            (key, value)
+            for key, value in parse_qsl(parts.query, keep_blank_values=True)
+            if key.lower() not in _LIBPQ_ONLY_PARAMS
+        ]
+        url = urlunsplit(parts._replace(query=urlencode(kept)))
+
+    return url
 
 
 class Settings(BaseSettings):
@@ -38,6 +78,11 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def coerce_async_driver(cls, value: str) -> str:
+        return normalise_async_database_url(value)
+
     @field_validator("SECRET_KEY")
     @classmethod
     def reject_placeholder_secret(cls, value: str) -> str:
@@ -68,7 +113,7 @@ class Settings(BaseSettings):
         """The database URL with the async driver stripped, for asyncpg scripts."""
         if self.DATABASE_URL_SYNC:
             return self.DATABASE_URL_SYNC
-        return self.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
+        return self.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://", 1)
 
 
 settings = Settings()
