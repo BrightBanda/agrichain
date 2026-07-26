@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: AppColors.background,
       ),
-      home: OtpVerificationPage(),
+      home: const AuthGate(),
     );
   }
 }

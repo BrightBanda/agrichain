@@ -59,6 +59,7 @@ class FarmerProfileResponse(BaseModel):
 class UserRegisterResponse(BaseModel):
     id: uuid.UUID
     phone_number: str
+    display_name: Optional[str] = None
     role: UserRole
     is_verified: bool
     created_at: datetime
@@ -66,6 +67,45 @@ class UserRegisterResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Roles that register as an organisation rather than an individual farmer.
+ORGANIZATION_ROLES = {
+    UserRole.FINANCIAL_INSTITUTION,
+    UserRole.SUPPLIER,
+    UserRole.PRODUCE_BUYER,
+    UserRole.COOPERATIVE,
+}
+
+
+class OrganizationRegisterRequest(BaseModel):
+    """FR-01: a non-farmer account (institution, supplier, buyer, cooperative).
+
+    Organisations have no KYC profile of their own in this MVP; an administrator
+    would verify them out of band before is_verified is set. ADMIN is
+    deliberately not registerable through the public API.
+    """
+
+    display_name: str = Field(..., example="NBS Agri Finance")
+    role: UserRole = Field(
+        UserRole.FINANCIAL_INSTITUTION, example=UserRole.FINANCIAL_INSTITUTION
+    )
+    phone_number: str = Field(..., example="+265888100200")
+    email: Optional[str] = Field(None, example="agri@nbs.mw")
+    password: str = Field(..., min_length=6, example="Password123!")
+    confirm_password: str = Field(..., example="Password123!")
+
+    @model_validator(mode="after")
+    def verify_request(self):
+        if self.password != self.confirm_password:
+            raise ValueError("Password and confirm_password do not match.")
+        if self.role not in ORGANIZATION_ROLES:
+            allowed = ", ".join(sorted(role.value for role in ORGANIZATION_ROLES))
+            raise ValueError(
+                f"role must be one of: {allowed}. Farmers register at "
+                f"/auth/register/farmer."
+            )
+        return self
 
 
 class UserListResponse(BaseModel):
