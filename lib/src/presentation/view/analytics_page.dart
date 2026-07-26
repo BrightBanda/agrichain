@@ -15,6 +15,7 @@ import '../../utils/section_header.dart';
 import '../../utils/segmented_toggle.dart';
 import '../../utils/stat_tile.dart';
 import '../../utils/work_log_tile.dart';
+import '../../utils/responsive.dart';
 import '../viewmodel/analytics_view_model.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/farmer_dashboard_view_model.dart';
@@ -52,7 +53,8 @@ class _MyAnalyticsPageState extends ConsumerState<MyAnalyticsPage> {
             await ref.read(farmerDashboardProvider.notifier).refresh();
             ref.invalidate(scoreHistoryProvider);
           },
-          child: ListView(
+          child: PageWidth(
+            child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
               const AppHeader(subtitle: 'My Analytics'),
@@ -169,7 +171,7 @@ class _MyAnalyticsPageState extends ConsumerState<MyAnalyticsPage> {
                 ),
               },
             ],
-          ),
+          )),
         ),
       ),
     );

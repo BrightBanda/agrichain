@@ -8,6 +8,7 @@ import '../../utils/pill_badge.dart';
 import '../../utils/section_header.dart';
 import '../../utils/service_selector.dart';
 import '../../utils/stat_tile.dart';
+import '../../utils/responsive.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/product_list_view_model.dart';
 import 'marketplace_page.dart';
@@ -48,7 +49,8 @@ class ServiceProviderHomePage extends ConsumerWidget {
           color: AppColors.primary,
           onRefresh: () =>
               ref.read(productListViewModelProvider.notifier).refresh(),
-          child: ListView(
+          child: PageWidth(
+            child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
             children: [
               const AppHeader(
@@ -136,7 +138,7 @@ class ServiceProviderHomePage extends ConsumerWidget {
                 ),
               },
             ],
-          ),
+          )),
         ),
       ),
     );

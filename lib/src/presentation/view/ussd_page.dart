@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../utils/ussd_keypad.dart';
+import '../../utils/responsive.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/farmer_dashboard_view_model.dart';
 import '../viewmodel/product_list_view_model.dart';
@@ -52,7 +53,8 @@ class _UssdPageState extends ConsumerState<UssdPage> {
         ),
       ),
       body: SafeArea(
-        child: ListView(
+        child: PageWidth(
+          child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
           children: [
             Container(
@@ -163,7 +165,7 @@ class _UssdPageState extends ConsumerState<UssdPage> {
                       }),
               ),
           ],
-        ),
+        )),
       ),
     );
   }

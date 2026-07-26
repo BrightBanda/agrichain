@@ -33,9 +33,21 @@ PASSWORD = settings.DEMO_ACCOUNT_PASSWORD
 FARMER_PHONE = "+265991000001"
 COOP_PHONE = "+265991000002"
 BANK_PHONE = "+265991000003"
-DEMO_PHONES = [FARMER_PHONE, COOP_PHONE, BANK_PHONE]
+# Two extra accounts backing the in-app demo picker: a farmer with no
+# activity (score stays at the 300 floor, so most loans are out of reach)
+# and a service provider.
+NEW_FARMER_PHONE = "+265991000004"
+SUPPLIER_PHONE = "+265991000005"
+DEMO_PHONES = [
+    FARMER_PHONE,
+    COOP_PHONE,
+    BANK_PHONE,
+    NEW_FARMER_PHONE,
+    SUPPLIER_PHONE,
+]
 
 DEMO_NATIONAL_ID = "DEMO00000001"
+NEW_FARMER_NATIONAL_ID = "DEMO00000002"
 DEMO_PRODUCT_NAME = "Demo Dry White Maize"
 DEMO_REFERENCE = "DEMO-MM-000001"
 DEMO_REFERENCE_PARTIAL = "DEMO-MM-000002"
@@ -97,6 +109,39 @@ async def seed() -> None:
                 },
             )
             response.raise_for_status()
+
+        # A farmer with nothing recorded: demonstrates the "not yet eligible"
+        # path, since a 300 score fails most products' minimum.
+        response = await client.post(
+            f"{BASE}/auth/register/farmer",
+            json={
+                "full_name": "Tadala Phiri",
+                "national_id_number": NEW_FARMER_NATIONAL_ID,
+                "gender": "OTHER",
+                "district": "Lilongwe",
+                "traditional_authority": "T/A Kalolo",
+                "village": "Not yet provided",
+                "phone_number": NEW_FARMER_PHONE,
+                "password": PASSWORD,
+                "confirm_password": PASSWORD,
+            },
+        )
+        response.raise_for_status()
+
+        response = await client.post(
+            f"{BASE}/auth/register/organization",
+            json={
+                "display_name": "Farmers World Malawi",
+                "role": "SUPPLIER",
+                "phone_number": SUPPLIER_PHONE,
+                "password": PASSWORD,
+                "confirm_password": PASSWORD,
+                "district": "Lilongwe",
+                "description": "Certified seed and fertilizer supplier.",
+                "services": ["SEEDS", "FERTILIZER"],
+            },
+        )
+        response.raise_for_status()
 
         farmer_token = await _login(client, FARMER_PHONE)
         coop_token = await _login(client, COOP_PHONE)
@@ -239,7 +284,13 @@ async def seed() -> None:
         print(f"  ledger blocks : {stats['block_count']}")
         print(f"  chain valid   : {integrity['valid']}")
         print(f"  events        : {stats['events']}")
-        print(f"\n  sign in as {FARMER_PHONE} / {PASSWORD}")
+        print("\n  demo accounts (all share the same password):")
+        print(f"    farmer, established   {FARMER_PHONE}")
+        print(f"    farmer, no score      {NEW_FARMER_PHONE}")
+        print(f"    service provider      {SUPPLIER_PHONE}")
+        print(f"    cooperative           {COOP_PHONE}")
+        print(f"    bank admin            {BANK_PHONE}")
+        print(f"    password              {PASSWORD}")
 
 
 async def clean() -> None:

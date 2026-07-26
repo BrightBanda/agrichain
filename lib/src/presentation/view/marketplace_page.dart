@@ -9,6 +9,7 @@ import '../../utils/filter_bar.dart';
 import '../../utils/product_grid_card.dart';
 import '../../utils/segmented_toggle.dart';
 import '../../utils/service_selector.dart' show iconForProductType;
+import '../../utils/responsive.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/product_list_view_model.dart';
 import 'product_form_page.dart';
@@ -70,7 +71,8 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
           color: AppColors.primary,
           onRefresh: () =>
               ref.read(productListViewModelProvider.notifier).refresh(),
-          child: ListView(
+          child: PageWidth(
+            child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
               const AppHeader(subtitle: 'Marketplace'),
@@ -144,7 +146,7 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                 ),
               },
             ],
-          ),
+          )),
         ),
       ),
     );
@@ -192,13 +194,16 @@ class _Grid extends StatelessWidget {
       return _EmptyGrid(filtered: totalCount > 0);
     }
 
-    return GridView.builder(
+    // Column count comes from the width actually available, so a desktop
+    // window shows more cards instead of two very wide ones.
+    return LayoutBuilder(
+      builder: (context, constraints) => GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
       itemCount: products.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: gridColumnsFor(constraints.maxWidth),
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
         // A fixed extent rather than an aspect ratio, so card height does not
@@ -225,6 +230,7 @@ class _Grid extends StatelessWidget {
           onContact: isMine ? null : () => onUnavailable('Messaging a seller'),
         );
       },
+      ),
     );
   }
 }

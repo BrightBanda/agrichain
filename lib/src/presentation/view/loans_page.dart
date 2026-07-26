@@ -9,6 +9,7 @@ import '../../utils/credit_header_card.dart';
 import '../../utils/filter_bar.dart';
 import '../../utils/loan_offer_card.dart';
 import '../../utils/section_header.dart';
+import '../../utils/responsive.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/farmer_dashboard_view_model.dart';
 import '../viewmodel/loan_marketplace_view_model.dart';
@@ -42,7 +43,8 @@ class LoansPage extends ConsumerWidget {
             await ref.read(loanMarketplaceProvider.notifier).refresh();
             await ref.read(farmerDashboardProvider.notifier).refresh();
           },
-          child: ListView(
+          child: PageWidth(
+            child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
               const AppHeader(subtitle: 'Loans'),
@@ -86,7 +88,7 @@ class LoansPage extends ConsumerWidget {
                 ),
               },
             ],
-          ),
+          )),
         ),
       ),
     );

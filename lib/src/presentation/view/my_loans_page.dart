@@ -7,6 +7,7 @@ import '../../data/models/loan.dart';
 import '../../data/repositories/farm_repository.dart';
 import '../../utils/pill_badge.dart';
 import '../../utils/section_header.dart';
+import '../../utils/responsive.dart';
 import '../viewmodel/farmer_dashboard_view_model.dart';
 import 'widgets/ledger_widgets.dart';
 
@@ -35,7 +36,8 @@ class MyLoansPage extends ConsumerWidget {
         child: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () => ref.read(farmerDashboardProvider.notifier).refresh(),
-          child: switch (state) {
+          child: PageWidth(
+            child: switch (state) {
             AsyncValue(hasError: true, :final error) => LedgerErrorState(
               message: '$error',
               onRetry: () => ref.invalidate(farmerDashboardProvider),
@@ -62,7 +64,7 @@ class MyLoansPage extends ConsumerWidget {
             _ => const Center(
               child: CircularProgressIndicator(color: AppColors.primary),
             ),
-          },
+          }),
         ),
       ),
     );

@@ -7,6 +7,7 @@ import '../../data/models/loan.dart';
 import '../../utils/pill_badge.dart';
 import '../../utils/section_header.dart';
 import '../../utils/stat_tile.dart';
+import '../../utils/responsive.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/institution_view_model.dart';
 import 'widgets/app_header.dart';
@@ -39,7 +40,8 @@ class InstitutionPortalPage extends ConsumerWidget {
           color: AppColors.primary,
           onRefresh: () =>
               ref.read(institutionApplicationsProvider.notifier).refresh(),
-          child: ListView(
+          child: PageWidth(
+            child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
               const AppHeader(
@@ -115,7 +117,7 @@ class InstitutionPortalPage extends ConsumerWidget {
                 ),
               },
             ],
-          ),
+          )),
         ),
       ),
     );

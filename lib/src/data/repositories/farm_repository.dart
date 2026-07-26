@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client.dart';
+import '../models/enums.dart';
 import '../models/harvest.dart';
 import '../models/lending_score.dart';
 import '../models/loan.dart';
@@ -30,6 +31,43 @@ class FarmRepository {
           .whereType<Map>()
           .map((json) => Harvest.fromJson(json.cast<String, dynamic>()))
           .toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  /// `POST /harvests` — records a harvest and anchors it to the ledger (FR-07).
+  ///
+  /// The response carries the block that attests to it, which is what makes the
+  /// record verifiable later.
+  Future<({Harvest harvest, int? blockIndex, String? blockHash})> recordHarvest({
+    required String cropName,
+    required double quantity,
+    required UnitType unitType,
+    required DateTime harvestDate,
+    required String season,
+    required String district,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiEndpoints.harvests,
+        data: {
+          'crop_name': cropName,
+          'quantity': quantity,
+          'unit_type': unitType.wireValue,
+          // The API expects a plain date, not a timestamp.
+          'harvest_date': harvestDate.toIso8601String().split('T').first,
+          'season': season,
+          'district': district,
+        },
+      );
+      final body = response.data ?? const {};
+      final harvest = (body['harvest'] as Map?)?.cast<String, dynamic>();
+      return (
+        harvest: Harvest.fromJson(harvest ?? const {}),
+        blockIndex: body['block_index'] as int?,
+        blockHash: body['block_hash'] as String?,
+      );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }

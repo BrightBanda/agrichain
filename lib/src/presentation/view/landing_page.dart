@@ -2,19 +2,63 @@ import 'package:agri/src/utils/feature_card.dart';
 import 'package:agri/src/utils/primary_button.dart';
 import 'package:agri/src/utils/secondary_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/models/demo_accounts.dart';
+import '../viewmodel/auth_view_model.dart';
 import 'AccountSelectionPage.dart';
 import 'login_page.dart';
+import 'widgets/demo_account_sheet.dart';
 
 /// The unauthenticated entry point.
 ///
 /// Three ways in: create an account (the next screen asks farmer or service
 /// provider), sign in, or the bank admin route used to verify loans.
-class LandingPage extends StatelessWidget {
+class LandingPage extends ConsumerWidget {
   const LandingPage({super.key});
 
+  /// Signs in as the seeded bank admin and lets AuthGate route to the portal.
+  ///
+  /// "Directly" means without typing credentials, not without authenticating:
+  /// the loan endpoints require a FINANCIAL_INSTITUTION token, so there is a
+  /// real sign-in behind this.
+  Future<void> _openAdminPortal(BuildContext context, WidgetRef ref) async {
+    final account = DemoAccounts.bankAdmin;
+    final ok = await ref.read(authViewModelProvider.notifier).signIn(
+      phoneNumber: account.phoneNumber,
+      password: account.password,
+    );
+
+    if (ok || !context.mounted) return;
+
+    // No seeded admin: fall back to the form rather than failing silently.
+    final error = ref.read(authViewModelProvider).error;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 7),
+          content: Text(
+            '${error ?? 'Could not sign in.'}\n'
+            'Run "python seed_demo.py", or sign in with an institution account.',
+          ),
+        ),
+      );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const LoginPage(
+          title: 'National Bank Admin Access',
+          subtitle:
+              'Sign in with your institution account to review and verify '
+              'farmer loan applications.',
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: const Color(0xFF0F5234),
       body: SafeArea(
@@ -84,22 +128,35 @@ class LandingPage extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const LoginPage()),
                 ),
               ),
+              if (DemoAccounts.enabled) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () => DemoAccountSheet.show(context),
+                  icon: const Icon(Icons.science_outlined, size: 16),
+                  label: const Text(
+                    'Use a test account',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white38),
+                    minimumSize: const Size(double.infinity, 44),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 4),
 
               // Staff route into the same credentials flow. The role on the
               // account decides what appears after sign-in, so this is a
               // labelled shortcut rather than a separate authority.
               TextButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const LoginPage(
-                      title: 'National Bank Admin Access',
-                      subtitle:
-                          'Sign in with your institution account to review and '
-                          'verify farmer loan applications.',
-                    ),
-                  ),
-                ),
+                onPressed: () => _openAdminPortal(context, ref),
                 icon: const Icon(
                   Icons.account_balance_outlined,
                   size: 14,

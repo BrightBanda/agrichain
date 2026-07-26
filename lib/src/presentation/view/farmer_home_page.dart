@@ -13,9 +13,11 @@ import '../../utils/stat_tile.dart';
 import '../../utils/status_notice_card.dart';
 import '../../utils/weather_card.dart';
 import '../../utils/work_log_tile.dart';
+import '../../utils/responsive.dart';
 import '../viewmodel/auth_view_model.dart';
 import '../viewmodel/farmer_dashboard_view_model.dart';
 import 'blockchain_explorer_page.dart';
+import 'record_harvest_page.dart';
 import 'score_details_page.dart';
 import 'widgets/app_header.dart';
 import 'widgets/ledger_widgets.dart';
@@ -44,7 +46,8 @@ class FarmerHomePage extends ConsumerWidget {
         child: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () => ref.read(farmerDashboardProvider.notifier).refresh(),
-          child: switch (state) {
+          child: PageWidth(
+            child: switch (state) {
             AsyncValue(hasError: true, :final error) => ListView(
               padding: const EdgeInsets.all(20),
               children: [
@@ -72,7 +75,7 @@ class FarmerHomePage extends ConsumerWidget {
                 ),
               ],
             ),
-          },
+          }),
         ),
       ),
     );
@@ -182,9 +185,9 @@ class _Dashboard extends ConsumerWidget {
               icon: Icons.add,
               label: 'Log Work',
               filled: true,
-              // Recording a harvest has no screen yet; the endpoint exists.
-              onTap: () =>
-                  FarmerHomePage._notAvailable(context, 'Logging farm work'),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RecordHarvestPage()),
+              ),
             ),
           ],
         ),
@@ -252,8 +255,12 @@ class _Dashboard extends ConsumerWidget {
         SectionHeader(
           title: 'Recent Garden Work',
           actionLabel: 'Record Work',
-          onAction: () =>
-              FarmerHomePage._notAvailable(context, 'Logging farm work'),
+          onAction: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const RecordHarvestPage()),
+            );
+            await ref.read(farmerDashboardProvider.notifier).refresh();
+          },
         ),
         const SizedBox(height: 10),
         if (dashboard.recentWork.isEmpty)
