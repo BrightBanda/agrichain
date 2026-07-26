@@ -44,21 +44,24 @@ services:
         value: false
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: 1440
-      # Resolved from the web service itself rather than written by hand.
-      # onrender.com subdomains are globally unique, so a taken name gets a
-      # random suffix (agrichain-web-ntyc). A hardcoded origin is then wrong and
-      # the browser blocks every API call.
-      - key: WEB_APP_HOST
-        fromService:
-          name: agrichain-web
-          type: web
-          property: host
-      # Extra origins for local development. WEB_APP_HOST is added by the
-      # backend, which prefixes a bare hostname with https://.
-      # Mobile builds are unaffected: native apps send no Origin header, so CORS
-      # never applies to them.
+      # Any origin. Deliberate, and safe for how this API authenticates:
+      #
+      # The alternative is naming the web app's origin, but onrender.com
+      # subdomains get a random suffix when a name is taken (agrichain-web-ntyc),
+      # and resolving that suffix from a static site via fromService did not
+      # work — the browser then blocks every call with no useful error, because
+      # a CORS rejection is indistinguishable from a network failure in JS.
+      #
+      # "*" costs little here: the API is bearer-token authenticated, not
+      # cookie-based, so main.py disables allow_credentials whenever the origin
+      # is a wildcard. Another site can call the public endpoints, but cannot act
+      # as a user without a token it has no way to obtain.
+      #
+      # Narrow this to the exact origin for a real production deployment.
+      # Mobile builds are unaffected either way: native apps send no Origin
+      # header, so CORS never applies to them.
       - key: BACKEND_CORS_ORIGINS
-        value: http://localhost:8080,http://127.0.0.1:8080
+        value: "*"
 
   # --- Flutter web app --------------------------------------------------------
   - type: web
