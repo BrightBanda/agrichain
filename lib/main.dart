@@ -1,9 +1,11 @@
-import 'package:agri/src/presentation/view/AccountSelectionPage.dart';
-import 'package:agri/src/presentation/view/landing_page.dart';
+import 'package:agri/src/core/theme/app_colors.dart';
+import 'package:agri/src/presentation/view/auth_gate.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
-  runApp(const MyApp());
+  // ProviderScope hosts every view model, repository and the Dio client.
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -16,10 +18,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'AgriChain',
       theme: ThemeData(
-        primarySwatch: Colors.green,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          primary: AppColors.primary,
+        ),
+        scaffoldBackgroundColor: AppColors.background,
       ),
-      home: const AccountSelectionPage(),
+      // Routes to the marketplace or the sign-up flow based on the stored session.
+      home: const AuthGate(),
     );
   }
-
 }

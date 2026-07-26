@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     Text,
     DateTime,
+    func,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -58,9 +59,13 @@ class Product(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default="now()")
+    # func.now() renders DEFAULT now(), evaluated per row. A plain "now()"
+    # string would be emitted as a quoted literal and frozen at DDL time.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default="now()", onupdate="now()"
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
     # Relationships

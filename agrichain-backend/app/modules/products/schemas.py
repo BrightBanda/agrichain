@@ -33,3 +33,8 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ProductListResponse(BaseModel):
+    products: list[ProductResponse]
+    total: int

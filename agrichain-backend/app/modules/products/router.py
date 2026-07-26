@@ -1,11 +1,16 @@
 from fastapi import APIRouter, Depends, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.modules.products.models import Product
-from app.modules.products.schemas import ProductCreateRequest, ProductResponse
 from app.modules.farmers.models import User
+from app.modules.products.models import Product
+from app.modules.products.schemas import (
+    ProductCreateRequest,
+    ProductListResponse,
+    ProductResponse,
+)
 
 router = APIRouter()
 
@@ -35,3 +40,11 @@ async def create_product(
     await db.commit()
     await db.refresh(new_product)
     return new_product
+
+
+@router.get("/products", response_model=ProductListResponse)
+async def get_all_products(db: AsyncSession = Depends(get_db)):
+    """Get all products."""
+    result = await db.execute(select(Product))
+    products = result.scalars().all()
+    return ProductListResponse(products=products, total=len(products))
