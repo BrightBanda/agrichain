@@ -73,10 +73,15 @@ async def register_farmer(
     db.add(farmer_profile)
 
     await db.commit()
-    await db.refresh(new_user)
 
-    # Fetch relations for response payload
-    result = await db.execute(select(User).where(User.id == new_user.id))
+    # selectinload is required, not an optimisation: the response model reads
+    # farmer_profile while serialising, and a lazy load at that point raises
+    # MissingGreenlet under asyncio.
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.farmer_profile))
+        .where(User.id == new_user.id)
+    )
     return result.scalars().first()
 
 

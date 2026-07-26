@@ -1,30 +1,34 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:agri/main.dart';
+import 'package:agri/src/presentation/view/AccountSelectionPage.dart';
+import 'package:agri/src/presentation/viewmodel/auth_view_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:agri/main.dart';
+/// An [AuthViewModel] that resolves immediately, so the test never touches
+/// secure storage or the network.
+class _SignedOutAuthViewModel extends AuthViewModel {
+  @override
+  Future<AuthState> build() async => const Unauthenticated();
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('signed-out users land on the account selection screen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authViewModelProvider.overrideWith(_SignedOutAuthViewModel.new),
+        ],
+        child: const MyApp(),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Resolve the async build() of the auth view model.
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byType(AccountSelectionPage), findsOneWidget);
+    expect(find.text('Who are you?'), findsOneWidget);
+    expect(find.text('Sign In To Your Account'), findsOneWidget);
   });
 }

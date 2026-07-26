@@ -1,8 +1,14 @@
+import 'package:agri/src/presentation/view/farmer_register_page.dart';
+import 'package:agri/src/presentation/view/login_page.dart';
 import 'package:agri/src/utils/role_card.dart';
 import 'package:flutter/material.dart';
 
 class AccountSelectionPage extends StatelessWidget {
   const AccountSelectionPage({super.key});
+
+  void _open(BuildContext context, Widget page) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +140,7 @@ class AccountSelectionPage extends StatelessWidget {
                 icon: Icons.eco_outlined,
                 iconBgColor: const Color(0xFFD4F3E2),
                 iconColor: const Color(0xFF1B6B44),
-                onTap: () {},
+                onTap: () => _open(context, const FarmerRegisterPage()),
               ),
               const SizedBox(height: 16),
 
@@ -151,7 +157,18 @@ class AccountSelectionPage extends StatelessWidget {
                 icon: Icons.apartment_outlined,
                 iconBgColor: const Color(0xFFE0EBFF),
                 iconColor: const Color(0xFF2563EB),
-                onTap: () {},
+                // The backend only exposes /auth/register/farmer today.
+                onTap: () {
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Loan institution registration is not available yet.',
+                        ),
+                      ),
+                    );
+                },
               ),
               const SizedBox(height: 32),
 
@@ -165,7 +182,7 @@ class AccountSelectionPage extends StatelessWidget {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => _open(context, const LoginPage()),
                   style: ElevatedButton.styleFrom(
                     backgroundColor:Color(0xFF0F6838), // Dark navy button
                     shape: RoundedRectangleBorder(
