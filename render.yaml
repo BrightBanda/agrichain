@@ -67,28 +67,24 @@ services:
   - type: web
     name: agrichain-web
     runtime: static
-    envVars:
-      # The API's real hostname, suffix and all, injected by Render at build
-      # time. Hardcoding it breaks the moment a service name collides and Render
-      # appends a suffix.
-      - key: API_HOST
-        fromService:
-          name: agrichain-api
-          type: web
-          property: host
     # Flutter is not preinstalled on Render, so the SDK is fetched at build time.
     # --depth 1 keeps the clone small; the build takes a few minutes.
     #
-    # Mobile release builds do NOT read this file: they fall back to
-    # AppConfig.hostedApiHost, so that constant must be updated separately (or
-    # passed as --dart-define=API_HOST=...) for an APK to reach the API.
+    # Deliberately NO --dart-define for the API address. A release build already
+    # defaults to AppConfig.hostedApiHost, so that constant is the single source
+    # of truth for web and mobile alike — change it in one place and rebuild.
+    #
+    # Do not reintroduce `fromService … property: host` here: that returns
+    # Render's *internal* hostname for private service-to-service networking
+    # (agrichain-api-l8op, no domain), which a browser cannot resolve. It
+    # silently produced https://agrichain-api-l8op/api/v1 and every request
+    # failed as an unreachable host.
     buildCommand: >-
       git clone --depth 1 -b stable https://github.com/flutter/flutter.git
       "$HOME/flutter" &&
       export PATH="$HOME/flutter/bin:$PATH" &&
       flutter --version &&
       flutter build web --release
-      --dart-define=API_BASE_URL=https://$API_HOST/api/v1
     staticPublishPath: build/web
     routes:
       # Flutter web is a single-page app: every path must serve index.html or a
