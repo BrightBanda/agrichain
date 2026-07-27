@@ -136,6 +136,7 @@ const _products = [
     district: 'Lilongwe',
     pricePerUnit: 45000,
     quantityAvailable: 25,
+    description: 'Healthy free-range pigs, ready for market.',
     sellerName: 'george mbale',
     sellerVerified: true,
   ),
@@ -307,6 +308,30 @@ void main() {
       expect(find.text('Seeds'), findsOneWidget);
       expect(find.text('Fertiliser'), findsOneWidget);
 
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a listing shows its description, not just the tag', (
+      tester,
+    ) async {
+      await _pump(tester, const MarketplacePage());
+
+      // The availability tag used to occupy this slot, leaving the seller's
+      // own description nowhere to appear.
+      expect(
+        find.text('Healthy free-range pigs, ready for market.'),
+        findsOneWidget,
+      );
+      expect(find.text('Available: 25 Piece'), findsOneWidget);
+      expect(find.text('nkhumba'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a listing with no description still lays out', (tester) async {
+      await _pump(tester, const MarketplacePage());
+      // The second stub product has none; the card must not leave a gap or
+      // overflow because of it.
+      expect(find.text('Certified Hybrid Maize Seeds 25kg'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

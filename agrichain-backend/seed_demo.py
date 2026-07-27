@@ -104,7 +104,7 @@ async def seed() -> None:
 
         for display_name, role, phone in (
             ("Kalolo Farmers Cooperative", "COOPERATIVE", COOP_PHONE),
-            ("NBS Agri Finance", "FINANCIAL_INSTITUTION", BANK_PHONE),
+            ("National Bank", "FINANCIAL_INSTITUTION", BANK_PHONE),
         ):
             response = await client.post(
                 f"{BASE}/auth/register/organization",

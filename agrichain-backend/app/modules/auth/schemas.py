@@ -99,7 +99,7 @@ class OrganizationRegisterRequest(BaseModel):
     deliberately not registerable through the public API.
     """
 
-    display_name: str = Field(..., example="NBS Agri Finance")
+    display_name: str = Field(..., example="National Bank")
     role: UserRole = Field(
         UserRole.FINANCIAL_INSTITUTION, example=UserRole.FINANCIAL_INSTITUTION
     )

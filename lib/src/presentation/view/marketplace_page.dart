@@ -207,8 +207,9 @@ class _Grid extends StatelessWidget {
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
         // A fixed extent rather than an aspect ratio, so card height does not
-        // drift with device width.
-        mainAxisExtent: 320,
+        // drift with device width. Tall enough for a two-line name plus a
+        // two-line description without either being squeezed away.
+        mainAxisExtent: 372,
       ),
       itemBuilder: (context, index) {
         final product = products[index];
@@ -216,6 +217,7 @@ class _Grid extends StatelessWidget {
 
         return ProductGridCard(
           productName: product.productName,
+          description: product.description,
           sellerName: product.sellerName ?? 'Unknown seller',
           sellerVerified: product.sellerVerified,
           district: product.district,

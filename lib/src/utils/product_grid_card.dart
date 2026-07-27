@@ -13,6 +13,10 @@ import '../core/theme/app_colors.dart';
 /// the seller's real KYC verification state instead.
 class ProductGridCard extends StatelessWidget {
   final String productName;
+
+  /// The seller's own description. Omitted from the card when absent, rather
+  /// than leaving a gap.
+  final String? description;
   final String sellerName;
   final bool sellerVerified;
   final String district;
@@ -34,6 +38,7 @@ class ProductGridCard extends StatelessWidget {
     required this.priceText,
     required this.unitLabel,
     required this.imagePlaceholderIcon,
+    this.description,
     this.isMine = false,
     this.onBuy,
     this.onContact,
@@ -112,6 +117,24 @@ class ProductGridCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (description != null && description!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  // Flexible like the name above: in a fixed-height grid cell
+                  // the text blocks must give way to each other rather than
+                  // one being clipped out of sight.
+                  Flexible(
+                    child: Text(
+                      description!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        color: AppColors.textMuted,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 7),
                 Container(
                   padding: const EdgeInsets.symmetric(
