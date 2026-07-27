@@ -10,7 +10,7 @@ Step 2: wait for it to load, it will take about 7 second on first launch to load
 
 HOW TO RUN THE MOBILE APPLICATION
 
-Step 1: download the app through the link: 
+Step 1: download the app through the link: https://github.com/BrightBanda/agrichain/releases/download/first-release/agrichain.apk
 
 Step 2: click on the apk package to install
 
